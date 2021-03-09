@@ -26,8 +26,13 @@ class ExternalTaskExecutor:
                 # in case task result is not set inside action function, set it in task here
             task.set_task_result(task_result)
         except Exception as err:
-            _LOGGER.warn(err)
-            task_result = task.failure(error_message="Execution Error", error_details=str(err), max_retries=3, retry_timeout=10000)
+            _LOGGER.warning(str(err))
+            task_result = task.failure(
+                error_message=type(err).__name__,
+                error_details=str(err),
+                max_retries=3,
+                retry_timeout=10000,
+            )
         await self._handle_task_result(task_result)
         return task_result
 
