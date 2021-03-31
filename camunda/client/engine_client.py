@@ -2,6 +2,7 @@ import logging
 import glob
 from os.path import basename, splitext
 from http import HTTPStatus
+from aiohttp import FormData
 
 from camunda.utils.response_utils import raise_exception_if_not_ok
 from camunda.utils.utils import join
@@ -49,17 +50,18 @@ class EngineClient:
         for p in paths:
             base_name = basename(p)
             no_ext, _ = splitext(base_name)
-            files = {base_name: (base_name, open(p, "rb"), "text/xml")}
-            body = {
-                "deployment-name": no_ext,
-                "deployment-source": "bconf",
-                "deploy-changed-only": "true",
-            }
+            data = FormData()
+            data.add_field("file", open(p, "rb"), filename=base_name, content_type="text/xml")
+            data.add_field("deployment-name", no_ext)
+            data.add_field("deployment-source", "external-task-client-python")
+            data.add_field("deploy-changed-only", "true")
+            logger.info(f"uploading {base_name}")
             async with self.session.post(
-                f"{self.engine_base_url}/deployment/create", files=files, data=body
+                f"{self.engine_base_url}/deployment/create", data=data
             ) as response:
                 if response.status == HTTPStatus.BAD_REQUEST:
-                    raise Exception(await response.json()["message"])
+                    reason = await response.json()
+                    raise Exception(reason)
                 elif response.status != HTTPStatus.OK:
                     response.raise_for_status()
 
