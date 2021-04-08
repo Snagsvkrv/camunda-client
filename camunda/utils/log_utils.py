@@ -1,15 +1,13 @@
 import logging
 
-from frozendict import frozendict
-
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.NullHandler())
 
 
-def log_with_context(message, context=frozendict({}), log_level="info", **kwargs):
+def log_with_context(message, context=None, log_level="info", **kwargs):
     log_function = __get_log_function(log_level)
 
-    log_context_prefix = __get_log_context_prefix(context)
+    log_context_prefix = __get_log_context_prefix(context or {})
     if log_context_prefix:
         log_function(f"{log_context_prefix} {message}", **kwargs)
     else:

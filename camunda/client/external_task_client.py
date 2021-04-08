@@ -1,8 +1,6 @@
 import logging
 from http import HTTPStatus
 
-from frozendict import frozendict
-
 from camunda.client.engine_client import ENGINE_LOCAL_BASE_URL
 from camunda.utils.response_utils import raise_exception_if_not_ok
 from camunda.utils.utils import str_to_list
@@ -21,12 +19,13 @@ class ExternalTaskClient:
     }
 
     def __init__(
-        self, worker_id, session, engine_base_url=ENGINE_LOCAL_BASE_URL, config=frozendict({})
+        self, worker_id, session, engine_base_url=ENGINE_LOCAL_BASE_URL, config=None
     ):
         self.worker_id = worker_id
         self.external_task_base_url = engine_base_url + "/external-task"
-        self.config = type(self).default_config
-        self.config.update(config)
+        self.config = self.default_config.copy()
+        if config is not None:
+            self.config.update(config)
         self.session = session
 
     def get_fetch_and_lock_url(self):
@@ -52,7 +51,7 @@ class ExternalTaskClient:
                 {
                     "topicName": topic,
                     "lockDuration": self.config["lockDuration"],
-                    "processVariables": process_variables if process_variables else {},
+                    "processVariables": process_variables or {},
                 }
             )
         return topics

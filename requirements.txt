@@ -1,4 +1,3 @@
 aiohttp
 responses==0.10.14
-frozendict==1.2
 pytest-cov==2.8.1
