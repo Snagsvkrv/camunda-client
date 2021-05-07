@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1oplvhh" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.2.0">
+  <bpmn:process id="Process_1g7nqdp" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>Flow_0gxoxbd</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_0gxoxbd" sourceRef="StartEvent_1" targetRef="Activity_15nrqxa" />
+    <bpmn:endEvent id="Event_11zcrxf">
+      <bpmn:incoming>Flow_0fgr8c3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0fgr8c3" sourceRef="Activity_15nrqxa" targetRef="Event_11zcrxf" />
+    <bpmn:serviceTask id="Activity_15nrqxa" name="HelloWorld" camunda:type="external" camunda:topic="HelloWorldTask">
+      <bpmn:incoming>Flow_0gxoxbd</bpmn:incoming>
+      <bpmn:outgoing>Flow_0fgr8c3</bpmn:outgoing>
+    </bpmn:serviceTask>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1g7nqdp">
+      <bpmndi:BPMNEdge id="Flow_0gxoxbd_di" bpmnElement="Flow_0gxoxbd">
+        <di:waypoint x="215" y="117" />
+        <di:waypoint x="340" y="117" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0fgr8c3_di" bpmnElement="Flow_0fgr8c3">
+        <di:waypoint x="440" y="117" />
+        <di:waypoint x="572" y="117" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="179" y="99" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_11zcrxf_di" bpmnElement="Event_11zcrxf">
+        <dc:Bounds x="572" y="99" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0smff4u_di" bpmnElement="Activity_15nrqxa">
+        <dc:Bounds x="340" y="77" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
