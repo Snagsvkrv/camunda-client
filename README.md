@@ -220,10 +220,10 @@ In `number_check` and in `echo`, we see how to retrieve variables from the `Exte
 In `number_check`, there is also shown how a `Variables` object is created, a value is assigned and how this object is passed as a **local** variables object.
 Local variables can only be used in the scope of the service task.
 This is why we have to assign `result` to an output parameter in Camunda.
-We could also pass `variables` to `global_variables` inested.
+We could also pass `variables` to `global_variables` instead.
 This way, `result` could be used in the whole process.
-However, in more complex scenarios this might clutter the environment and may even lead to colliding definitions.
-Keeping things local increases the control by keeping variables scopes narrow and also *visible* in the BPMN model.
+However, in more complex scenarios this might clutter the environment and may even lead to colliding variable definitions.
+Keeping things local increases the control by keeping variable scopes narrow and also *visible* in the BPMN model.
 
 When you run the example, you should see an output like this after you have started the Camunda process:
 
