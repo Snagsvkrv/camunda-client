@@ -29,7 +29,7 @@ Third, you need a way to deploy and run BPMN-Prozesses. The [Camunda Modeler](ht
 
 ### The Model
 
-The file [`bpmn_processes/hello_world.bpmn`](bpmn_processes/hello_world.bpmn) contains a very simple model:
+The file [`bpmn_process/hello_world.bpmn`](bpmn_process/hello_world.bpmn) contains a very simple model:
 
 
 ![](img/hello_world.png)
