@@ -39,7 +39,6 @@ class ExternalTaskClient:
             "topics": self._get_topics(topic_names, process_variables),
             "asyncResponseTimeout": self.config["asyncResponseTimeout"],
         }
-
         async with self.session.post(url, headers=self._get_headers(), json=body) as response:
             await raise_exception_if_not_ok(response)
             return await response.json()

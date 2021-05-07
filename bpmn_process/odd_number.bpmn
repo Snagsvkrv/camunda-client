@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1oplvhh" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.2.0">
+  <bpmn:process id="Process_OddNumber" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>Flow_0gxoxbd</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_0gxoxbd" sourceRef="StartEvent_1" targetRef="Activity_NumberCheck" />
+    <bpmn:serviceTask id="Activity_NumberCheck" name="Number Check" camunda:type="external" camunda:topic="NumberCheckTask">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="number">42</camunda:inputParameter>
+          <camunda:outputParameter name="isOdd">${result}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0gxoxbd</bpmn:incoming>
+      <bpmn:outgoing>Flow_0r9m8gn</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_196yheo" name="isOdd?" default="Flow_IsEven">
+      <bpmn:incoming>Flow_0r9m8gn</bpmn:incoming>
+      <bpmn:outgoing>Flow_IsEven</bpmn:outgoing>
+      <bpmn:outgoing>Flow_IsOdd</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0r9m8gn" sourceRef="Activity_NumberCheck" targetRef="Gateway_196yheo" />
+    <bpmn:sequenceFlow id="Flow_IsEven" sourceRef="Gateway_196yheo" targetRef="Activity_088dgfj" />
+    <bpmn:sequenceFlow id="Flow_IsOdd" name="&#34;true&#34;" sourceRef="Gateway_196yheo" targetRef="Activity_0j7s1fm">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${isOdd=="true"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:serviceTask id="Activity_088dgfj" name="Number is even!" camunda:type="external" camunda:topic="EchoTask">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="text">Number is even!</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_IsEven</bpmn:incoming>
+      <bpmn:outgoing>Flow_0uorkvi</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Activity_0j7s1fm" name="Number is odd!" camunda:type="external" camunda:topic="EchoTask">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="text">Number is odd!</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_IsOdd</bpmn:incoming>
+      <bpmn:outgoing>Flow_13z12dh</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Event_0jm0gw4">
+      <bpmn:incoming>Flow_13z12dh</bpmn:incoming>
+      <bpmn:incoming>Flow_0uorkvi</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_13z12dh" sourceRef="Activity_0j7s1fm" targetRef="Event_0jm0gw4" />
+    <bpmn:sequenceFlow id="Flow_0uorkvi" sourceRef="Activity_088dgfj" targetRef="Event_0jm0gw4" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_OddNumber">
+      <bpmndi:BPMNEdge id="Flow_0uorkvi_di" bpmnElement="Flow_0uorkvi">
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="720" y="120" />
+        <di:waypoint x="720" y="199" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13z12dh_di" bpmnElement="Flow_13z12dh">
+        <di:waypoint x="630" y="310" />
+        <di:waypoint x="720" y="310" />
+        <di:waypoint x="720" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ur4qzu_di" bpmnElement="Flow_IsOdd">
+        <di:waypoint x="440" y="242" />
+        <di:waypoint x="440" y="310" />
+        <di:waypoint x="530" y="310" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="442" y="273" width="27" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_15627yq_di" bpmnElement="Flow_IsEven">
+        <di:waypoint x="440" y="192" />
+        <di:waypoint x="440" y="120" />
+        <di:waypoint x="530" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0r9m8gn_di" bpmnElement="Flow_0r9m8gn">
+        <di:waypoint x="350" y="217" />
+        <di:waypoint x="415" y="217" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0gxoxbd_di" bpmnElement="Flow_0gxoxbd">
+        <di:waypoint x="188" y="217" />
+        <di:waypoint x="250" y="217" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="152" y="199" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0smff4u_di" bpmnElement="Activity_NumberCheck">
+        <dc:Bounds x="250" y="177" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_196yheo_di" bpmnElement="Gateway_196yheo" isMarkerVisible="true">
+        <dc:Bounds x="415" y="192" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="472" y="210" width="35" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0vod0kv_di" bpmnElement="Activity_088dgfj">
+        <dc:Bounds x="530" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_14y614t_di" bpmnElement="Activity_0j7s1fm">
+        <dc:Bounds x="530" y="270" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0jm0gw4_di" bpmnElement="Event_0jm0gw4">
+        <dc:Bounds x="702" y="199" width="36" height="36" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
