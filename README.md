@@ -26,7 +26,7 @@ This example will show you how to let a Python client communicate with Camunda.
 
 Firs, we assume that Camunda is up and running. If that's not the case, you might want to have a look at the [Camunda Platform Docker Images](https://github.com/camunda/docker-camunda-bpm-platform).
 Second, we assume that Camunda is running at [localhost:8080](localhost:8080). If not, you need to adapt the example below accordingly.
-Third, you need a way to deploy and run BPMN-Prozesses. The [Camunda Modeler](https://camunda.com/de/download/modeler/) is probably a good point of departure.
+Third, you need a way to deploy and run a BPMN process. The [Camunda Modeler](https://camunda.com/de/download/modeler/) is probably a good point of departure.
 
 ### The Model
 
@@ -50,7 +50,6 @@ Now let's create a Python client which will subscribe to that topic and do tasks
 The file can be found in [`examples/hello_world.py`](examples/hello_world.py):
 
 ```python
-
 import aiohttp
 import asyncio
 
@@ -64,22 +63,26 @@ async def main():
     async with aiohttp.ClientSession() as session:
         # We create a worker with a task id and pass the http session as well as the REST endpoint of Camunda.
         # You need to change 'base_url' in case your Camunda engine is configured differently.
-        worker = ExternalTaskWorker(worker_id=1, base_url="http://localhost:8080/engine-rest", session=session)
+        worker = ExternalTaskWorker(
+            worker_id=1, base_url="http://localhost:8080/engine-rest", session=session
+        )
         print("waiting for a task ...")
         # Subscribe is an async function which will block until the worker is cancelled with `worker.cancel()`,
         # In this example, no one will do this. We will stop the program with Ctrl+C instead
-        # When the worker detects a new task for the topic assigned to `topic_name` it will trigger the 
+        # When the worker detects a new task for the topic assigned to `topic_name` it will trigger the
         # function/method passed to `action`.
         await worker.subscribe(topic_names="HelloWorldTask", action=process)
+
 
 # this will be called when a task for the subscribed topic is available
 async def process(task: ExternalTask) -> TaskResult:
     print("I got a task!")
-    # Right now we just return the result of `task.complete` which is a 
+    # Right now we just return the result of `task.complete` which is a
     # `TaskResult` that messages Camunda a successful task execution.
     # If we return `task.failure()` instead, Camunda will publish the task again until
     # some client finally completes it or the maximum amount of retries is reached.
     return task.complete()
+
 
 # run the main task
 asyncio.run(main())
@@ -134,7 +137,7 @@ Next, let's have a look at `Number Check`:
 ```
 
 Now you might say 'Wait! Where does this come from?'.
-You can use the Modeler GUI to edit values but you can also edit the BPMN-XML direclty.
+You can use the Modeler GUI to edit values but you can also edit the BPMN-XML directly.
 In the lower left you will see two tabs labelled `Diagram` and `XML`. This is where you change the view.
 
 We see that the topic `camunda:topic` has been set to `NumberCheckTask` and that the service task contains two parameters in the `camunda:inputOutput` block.
@@ -144,16 +147,16 @@ You also don't need to do it in the XML view.
 Just change back to `Diagram` and look for the `Input/Output` tab in the property panel of `Number Check`.
 
 Last, we have a look at the Gateway (the diamond-shaped box with the big X).
-The gateway itsel just has a label. 
+The gateway itself just has a label. 
 This does nothing but can be used to clarify what the gateway will evaluate.
 We will evaluate our previously assigned `isOdd` variable.
-To do so, we need to set conditions on the flows leaving the gatway.
+To do so, we need to set conditions on the flows leaving the gateway.
 If you click on the flow to the bottom (labeled with `"true"`), the property panel will look like this:
 
 ![](img/flow_params.png)
 
 The `name` parameter is again just something that makes your model easier to comprehend.
-The `Condition Type` and `Expression` will determin if a Flow is considered valid.
+The `Condition Type` and `Expression` will determine if a Flow is considered valid.
 We chose `Expression` since we want to check the value of `isOdd`.
 In Camunda, this is done as seen in the picture above.
 When `isOdd == "true"` the service task `Number is odd!` will be executed and the process will end after this.
@@ -169,6 +172,7 @@ import asyncio
 from camunda.external_task.external_task import ExternalTask, TaskResult, Variables
 from camunda.external_task.external_task_worker import ExternalTaskWorker
 
+
 async def main():
     async with aiohttp.ClientSession() as session:
         # a new parameter! We can pass 'asyncResponseTimeout' to Camunda to configure how long a 'fetch and lock' connection
@@ -176,22 +180,27 @@ async def main():
         # worker to properly shut down. The default value is 30 seconds (300000)
         worker = ExternalTaskWorker(
             worker_id=4,
-            base_url="http://localhost:8080/engine-rest", session=session,
-            config={"asyncResponseTimeout": 5000}  # wait 5 seconds before timeout
-            )
+            base_url="http://localhost:8080/engine-rest",
+            session=session,
+            config={"asyncResponseTimeout": 5000},  # wait 5 seconds before timeout
+        )
         # Our worker will now subscribe to two topics now
         # We will create a new task with `asyncio.create_task` and await only the second subscribe
         asyncio.create_task(worker.subscribe(topic_names="NumberCheckTask", action=number_check))
         await worker.subscribe(topic_names="EchoTask", action=echo)
 
+
 async def number_check(task: ExternalTask) -> TaskResult:
     try:
         number = task.get_variable("number")
+        task.set_variable
         print(f"We received {number} for checking...")
         # we create a Variables object to hand to the TaskResult
         variables = Variables()
         # we set the variable 'result' to 'true' or 'false'
-        variables.set_variable("result", "true" if int(number) % 2 != 0 else "false", Variables.ValueType.STRING)
+        variables.set_variable(
+            "result", "true" if int(number) % 2 != 0 else "false", Variables.ValueType.STRING
+        )
         # We pass the variables object as LOCAL variables which will only be available in the context of the task
         # that called the external task worker. The result must be assigned in case it should be used somewhere else.
         # Just have a look at the odd_number.bpmn to see how.
@@ -206,6 +215,7 @@ async def number_check(task: ExternalTask) -> TaskResult:
 async def echo(task: ExternalTask) -> TaskResult:
     print(f"Camunda wants to say: {task.get_variable('text')}")
     return task.complete()
+
 
 # run the main task
 asyncio.run(main())
@@ -232,3 +242,87 @@ python ./examples/odd_number.py
 We received 42 for checking...
 Camunda wants to say: Number is even!
 ```
+
+## Managing multiple workers/subscriptions
+
+The above mentions some issues when clients are stopped and restarted.
+Camunda connections might not have been properly released the next time a task is scheduled by Camunda.
+This may cause the already stopped/inactive instance to lock the task.
+One way to deal with this is to keep track of the running asynchronous tasks and only quite the program after all subscriptions have been cancelled and returned as shown in [examples/manage_tasks.py](examples/manage_tasks.py):
+
+```python
+import aiohttp
+import asyncio
+
+from camunda.external_task.external_task import ExternalTask, TaskResult, Variables
+from camunda.external_task.external_task_worker import ExternalTaskWorker
+
+
+class Worker:
+    def __init__(self):
+        self.worker = None
+        self.loop = None
+
+    def start(self):
+        """Run the worker and block forever"""
+        self.loop = asyncio.get_event_loop()
+        self.loop.run_until_complete(self._run())
+
+    async def _run(self):
+        async with aiohttp.ClientSession() as session:
+            self.worker = ExternalTaskWorker(
+                worker_id=4, base_url="http://localhost:8080/engine-rest", session=session
+            )
+            # dispatch the first subscription
+            self.loop.create_task(
+                self.worker.subscribe(topic_names="NumberCheckTask", action=number_check)
+            )
+            # and block the current task with the second subscription again
+            await self.worker.subscribe(topic_names="EchoTask", action=echo)
+
+    def stop(self):
+        self.loop.run_until_complete(self._quit())
+
+    async def _quit(self):
+        """Cancels the running subcriptions"""
+        self.worker.cancel()
+        # We wait until there is only one asynchronous task left since this will be
+        # the very same task that we are currently running.
+        print("stopping ...")
+        running_tasks = len(asyncio.all_tasks())
+        while running_tasks > 1:
+            print(f"waiting for {running_tasks - 1} subscriptions to return ...")
+            await asyncio.sleep(5)
+            running_tasks = len(asyncio.all_tasks())
+        print("stopped")
+
+
+async def number_check(task: ExternalTask) -> TaskResult:
+    try:
+        number = task.get_variable("number")
+        task.set_variable
+        print(f"We received {number} for checking...")
+        variables = Variables()
+        variables.set_variable(
+            "result", "true" if int(number) % 2 != 0 else "false", Variables.ValueType.STRING
+        )
+        return tsask.complete(local_variables=variables)
+    except Exception as err:
+        print(f"Oh no! Something went wrong: {err}")
+        return task.failure()
+
+
+async def echo(task: ExternalTask) -> TaskResult:
+    print(f"Camunda wants to say: {task.get_variable('text')}")
+    return task.complete()
+
+
+# run the main task
+try:
+    worker = Worker()
+    worker.start()
+except KeyboardInterrupt:
+    worker.stop()
+```
+
+The code above basically does the same as the `odd_number` example before but we wrapped the asynchronous bits into a `Worker` class and added methods to start and stop workers and their subscriptions. Depending on how long you are willing to wait for a shutdown you might want to adjust `asyncResponseTimeout`.
