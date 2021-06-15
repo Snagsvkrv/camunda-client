@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
 
-from camunda.external_task.external_task import ExternalTask, TaskResult, Variables
+from camunda.external_task.external_task import ExternalTask, Variables
 from camunda.external_task.external_task_worker import ExternalTaskWorker
 
 
@@ -44,7 +44,7 @@ class Worker:
         print("stopped")
 
 
-async def number_check(task: ExternalTask) -> TaskResult:
+async def number_check(task: ExternalTask) -> None:
     try:
         number = task.get_variable("number")
         task.set_variable
@@ -53,15 +53,15 @@ async def number_check(task: ExternalTask) -> TaskResult:
         variables.set_variable(
             "result", "true" if int(number) % 2 != 0 else "false", Variables.ValueType.STRING
         )
-        return tsask.complete(local_variables=variables)
+        await task.complete(local_variables=variables)
     except Exception as err:
         print(f"Oh no! Something went wrong: {err}")
-        return task.failure()
+        await task.failure()
 
 
-async def echo(task: ExternalTask) -> TaskResult:
+async def echo(task: ExternalTask) -> None:
     print(f"Camunda wants to say: {task.get_variable('text')}")
-    return task.complete()
+    await task.complete()
 
 
 # run the main task

@@ -4,8 +4,6 @@ import asyncio
 from camunda.external_task.external_task import ExternalTask
 from camunda.external_task.external_task_worker import ExternalTaskWorker
 
-import logging
-
 
 async def main():
     # let's create an async http context with aiohttp
@@ -14,10 +12,7 @@ async def main():
         # We create a worker with a task id and pass the http session as well as the REST endpoint of Camunda.
         # You need to change 'base_url' in case your Camunda engine is configured differently.
         worker = ExternalTaskWorker(
-            worker_id=1,
-            base_url="http://localhost:8080/engine-rest",
-            session=session,
-            config={"lockDuration": 1000, "autoExtendLock": True, "asyncResponseTimeout": 5000},
+            worker_id=1, base_url="http://localhost:8080/engine-rest", session=session
         )
         print("waiting for a task ...")
         # Subscribe is an async function which will block until the worker is cancelled with `worker.cancel()`,
@@ -33,11 +28,8 @@ async def process(task: ExternalTask) -> None:
     # To communicate the successfull processing of a task, we await `task.complete`.
     # If we call `task.failure` instead, Camunda will publish the task again until
     # some client finally completes it or the maximum amount of retries is reached.
-    await asyncio.sleep(3)
     await task.complete()
-    # await task.failure("Foo", "Some message", 3, 1000)
 
 
 # run the main task
-logging.basicConfig(level=logging.DEBUG)
 asyncio.run(main())

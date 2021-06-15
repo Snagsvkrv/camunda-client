@@ -53,7 +53,7 @@ The file can be found in [`examples/hello_world.py`](examples/hello_world.py):
 import aiohttp
 import asyncio
 
-from camunda.external_task.external_task import ExternalTask, TaskResult
+from camunda.external_task.external_task import ExternalTask
 from camunda.external_task.external_task_worker import ExternalTaskWorker
 
 
@@ -75,13 +75,12 @@ async def main():
 
 
 # this will be called when a task for the subscribed topic is available
-async def process(task: ExternalTask) -> TaskResult:
+async def process(task: ExternalTask) -> None:
     print("I got a task!")
-    # Right now we just return the result of `task.complete` which is a
-    # `TaskResult` that messages Camunda a successful task execution.
-    # If we return `task.failure()` instead, Camunda will publish the task again until
+    # To communicate the successfull processing of a task, we await `task.complete`.
+    # If we call `task.failure` instead, Camunda will publish the task again until
     # some client finally completes it or the maximum amount of retries is reached.
-    return task.complete()
+    await task.complete()
 
 
 # run the main task
@@ -169,7 +168,7 @@ Now let's see how [examples/odd_number.py](examples/odd_number.py) looks like:
 import aiohttp
 import asyncio
 
-from camunda.external_task.external_task import ExternalTask, TaskResult, Variables
+from camunda.external_task.external_task import ExternalTask, Variables
 from camunda.external_task.external_task_worker import ExternalTaskWorker
 
 
@@ -190,12 +189,12 @@ async def main():
         await worker.subscribe(topic_names="EchoTask", action=echo)
 
 
-async def number_check(task: ExternalTask) -> TaskResult:
+async def number_check(task: ExternalTask) -> None:
     try:
         number = task.get_variable("number")
         task.set_variable
         print(f"We received {number} for checking...")
-        # we create a Variables object to hand to the TaskResult
+        # we create a Variables object to hand to the task object for completion
         variables = Variables()
         # we set the variable 'result' to 'true' or 'false'
         variables.set_variable(
@@ -204,17 +203,17 @@ async def number_check(task: ExternalTask) -> TaskResult:
         # We pass the variables object as LOCAL variables which will only be available in the context of the task
         # that called the external task worker. The result must be assigned in case it should be used somewhere else.
         # Just have a look at the odd_number.bpmn to see how.
-        return task.complete(local_variables=variables)
+        await task.complete(local_variables=variables)
     # If your input could not be parsed with `int()` the task will fail
     # and another external service could try to do better.
     except Exception as err:
         print(f"Oh no! Something went wrong: {err}")
-        return task.failure()
+        await task.failure()
 
 
-async def echo(task: ExternalTask) -> TaskResult:
+async def echo(task: ExternalTask) -> None:
     print(f"Camunda wants to say: {task.get_variable('text')}")
-    return task.complete()
+    await task.complete()
 
 
 # run the main task
@@ -254,7 +253,7 @@ One way to deal with this is to keep track of the running asynchronous tasks and
 import aiohttp
 import asyncio
 
-from camunda.external_task.external_task import ExternalTask, TaskResult, Variables
+from camunda.external_task.external_task import ExternalTask, Variables
 from camunda.external_task.external_task_worker import ExternalTaskWorker
 
 
@@ -297,7 +296,7 @@ class Worker:
         print("stopped")
 
 
-async def number_check(task: ExternalTask) -> TaskResult:
+async def number_check(task: ExternalTask) -> None:
     try:
         number = task.get_variable("number")
         task.set_variable
@@ -306,15 +305,15 @@ async def number_check(task: ExternalTask) -> TaskResult:
         variables.set_variable(
             "result", "true" if int(number) % 2 != 0 else "false", Variables.ValueType.STRING
         )
-        return tsask.complete(local_variables=variables)
+        await task.complete(local_variables=variables)
     except Exception as err:
         print(f"Oh no! Something went wrong: {err}")
-        return task.failure()
+        await task.failure()
 
 
-async def echo(task: ExternalTask) -> TaskResult:
+async def echo(task: ExternalTask) -> None:
     print(f"Camunda wants to say: {task.get_variable('text')}")
-    return task.complete()
+    await task.complete()
 
 
 # run the main task
