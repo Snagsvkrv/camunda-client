@@ -31,7 +31,7 @@ class Variables:
         return variable["value"]
 
     def set_variable(self, name, value, value_type=None):
-        # value_type could integer, long, string, boolean, json
+        # value_type could be integer, long, string, boolean, json
         data = {"value": value}
         if self.ValueType.is_valid(value_type):
             if value_type == self.ValueType.JSON:
@@ -39,24 +39,6 @@ class Variables:
             data["type"] = value_type
             data["valueInfo"] = {}
         self.variables[name] = data
-
-    @classmethod
-    def format(cls, variables):
-        """
-        Gives the correct format to variables.
-        :param variables: dict - Dictionary of variable names to values.
-        :return: Dictionary of well formed variables
-            {"var1": 1, "var2": True}
-            ->
-            {"var1": {"value": 1}, "var2": {"value": True}}
-        """
-        if isinstance(variables, Variables):
-            return variables.variables
-        else:
-            formatted_vars = {}
-            if variables:
-                formatted_vars = {k: {"value": v} for k, v in variables.items()}
-            return formatted_vars
 
     def to_dict(self):
         """

@@ -12,21 +12,27 @@ logger = logging.getLogger(__name__)
 class ExternalTaskClient:
     default_config = {
         "maxTasks": 1,
-        "lockDuration": 300000,  # in milliseconds
+        "lockDuration": 60000,  # in milliseconds
         "asyncResponseTimeout": 30000,
         "retries": 3,
-        "retryTimeout": 300000,
+        "retryTimeout": 30000,
     }
 
-    def __init__(
-        self, worker_id, session, engine_base_url=ENGINE_LOCAL_BASE_URL, config=None
-    ):
+    def __init__(self, worker_id, session, engine_base_url=ENGINE_LOCAL_BASE_URL, config=None):
         self.worker_id = worker_id
         self.external_task_base_url = engine_base_url + "/external-task"
         self.config = self.default_config.copy()
         if config is not None:
             self.config.update(config)
         self.session = session
+
+    @property
+    def lock_duration(self):
+        return self.config["lockDuration"]
+
+    @property
+    def max_retries(self):
+        return self.config["retries"]
 
     def get_fetch_and_lock_url(self):
         return f"{self.external_task_base_url}/fetchAndLock"
@@ -55,25 +61,23 @@ class ExternalTaskClient:
             )
         return topics
 
-    async def complete(self, task_id, global_variables, local_variables={}):
-        url = self.get_task_complete_url(task_id)
+    async def complete(
+        self, task_id, global_variables: Variables, local_variables: Variables = None
+    ):
+        url = f"{self.external_task_base_url}/{task_id}/complete"
 
         body = {
             "workerId": self.worker_id,
-            "variables": Variables.format(global_variables),
-            "localVariables": Variables.format(local_variables),
+            "variables": global_variables.variables,
+            "localVariables": local_variables.variables if local_variables else {},
         }
 
         async with self.session.post(url, headers=self._get_headers(), json=body) as response:
             await raise_exception_if_not_ok(response)
             return response.status == HTTPStatus.NO_CONTENT
 
-    def get_task_complete_url(self, task_id):
-        return f"{self.external_task_base_url}/{task_id}/complete"
-
     async def failure(self, task_id, error_message, error_details, retries, retry_timeout):
-        url = self.get_task_failure_url(task_id)
-        logger.info(f"setting retries to: {retries} for task: {task_id}")
+        url = f"{self.external_task_base_url}/{task_id}/failure"
         body = {
             "workerId": self.worker_id,
             "errorMessage": error_message,
@@ -87,12 +91,19 @@ class ExternalTaskClient:
             await raise_exception_if_not_ok(response)
             return response.status == HTTPStatus.NO_CONTENT
 
-    def get_task_failure_url(self, task_id):
-        return f"{self.external_task_base_url}/{task_id}/failure"
+    async def extend_lock(self, task_id: str) -> None:
+        url = f"{self.external_task_base_url}/{task_id}/extendLock"
+        logger.debug(f"Extending lock for {task_id} for {self.lock_duration} ms")
+        body = {
+            "workerId": self.worker_id,
+            "newDuration": self.lock_duration,
+        }
+        async with self.session.post(url, headers=self._get_headers(), json=body) as response:
+            await raise_exception_if_not_ok(response)
+            return response.status == HTTPStatus.NO_CONTENT
 
-    async def bpmn_failure(self, task_id, error_code):
-        url = self.get_task_bpmn_error_url(task_id)
-
+    async def bpmn_error(self, task_id, error_code):
+        url = f"{self.external_task_base_url}/{task_id}/bpmnError"
         body = {
             "workerId": self.worker_id,
             "errorCode": error_code,
@@ -101,9 +112,6 @@ class ExternalTaskClient:
         async with self.session.post(url, headers=self._get_headers(), json=body) as response:
             response.raise_for_status()
             return response.status == HTTPStatus.NO_CONTENT
-
-    def get_task_bpmn_error_url(self, task_id):
-        return f"{self.external_task_base_url}/{task_id}/bpmnError"
 
     def _get_headers(self):
         return {"Content-Type": "application/json"}
