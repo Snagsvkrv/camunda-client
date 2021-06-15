@@ -41,4 +41,3 @@ async def process(task: ExternalTask) -> None:
 # run the main task
 logging.basicConfig(level=logging.DEBUG)
 asyncio.run(main())
-

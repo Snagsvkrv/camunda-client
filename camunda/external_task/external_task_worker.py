@@ -76,9 +76,7 @@ class ExternalTaskWorker:
     async def _execute_task(self, task: ExternalTask, action: Callable):
         try:
             _LOGGER.info(f"Executing external task {task.task_id} for Topic: {task.topic_name}")
-            future = action(task)
-            if inspect.isawaitable(future):
-                await future
+            await action(task)
         except Exception as err:
             await task.failure(
                 error_message=type(err).__name__,
