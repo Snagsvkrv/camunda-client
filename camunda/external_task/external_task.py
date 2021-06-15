@@ -42,9 +42,15 @@ class ExternalTask:
     def tenant_id(self) -> str:
         return self._context.get("tenantId", None)
 
-    async def complete(self, local_variables: Variables = None) -> None:
+    async def complete(
+        self, global_variables: Variables = None, local_variables: Variables = None
+    ) -> None:
+        global_variables = Variables() if global_variables is None else global_variables
+        local_variables = Variables() if local_variables is None else local_variables
         _LOGGER.info(f"Task {self.task_id} completed")
-        _LOGGER.debug(f"\nGlobals: {self._variables.to_dict()}\nLocals: {local_variables}")
+        _LOGGER.debug(
+            f"\nGlobals: {global_variables.to_dict()}\nLocals: {local_variables.to_dict()}"
+        )
         if self._timer is not None:
             self._timer.cancel()
         await self.handler.complete(self.task_id, self._variables, local_variables)
