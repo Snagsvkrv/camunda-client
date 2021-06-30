@@ -1,6 +1,6 @@
 import logging
+from typing import Dict, Protocol
 
-from camunda.client.external_task_client import ExternalTaskClient
 from camunda.variables.variables import Variables
 from ..utils.utils import Timer
 
@@ -9,15 +9,29 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.NullHandler())
 
 
+class ExternalTaskHandler(Protocol):
+    async def complete(
+        self, task_id, global_variables: Variables, local_variables: Variables = None
+    ):
+        ...
+
+    async def failure(self, task_id, error_message, error_details, retries, retry_timeout):
+        ...
+
+    async def bpmn_error(self, task_id, error_code):
+        ...
+
+
 class ExternalTask:
-    def __init__(self, context, handler: ExternalTaskClient, extend_lock: bool):
+    def __init__(self, context, handler: ExternalTaskHandler, lock_interval: int):
         self.handler = handler
         self._context = context
-        self._variables = Variables(context.get("variables", {}))
+        self.local_variables = Variables()
+        self.global_variables = Variables()
         self._timer = None
-        if extend_lock:
-            # extend lock after 80 percent of th ethe lock duration time has passed
-            timeout_ms = handler.lock_duration * 0.8
+        if lock_interval:
+            # extend lock after 80 percent of the lock duration time has passed
+            timeout_ms = lock_interval * 0.8
             self._timer = Timer(timeout_ms / 1000, self.extend_lock)
 
     @property
@@ -32,28 +46,22 @@ class ExternalTask:
     def topic_name(self) -> str:
         return self._context["topicName"]
 
-    def get_variable(self, variable_name):
-        return self._variables.get_variable(variable_name)
-
-    def set_variable(self, variable_name, variable_value, variable_type=None) -> None:
-        self._variables.set_variable(variable_name, variable_value, variable_type)
+    @property
+    def context_variables(self) -> Dict[str, str]:
+        return self._context.get("variables", {})
 
     @property
     def tenant_id(self) -> str:
         return self._context.get("tenantId", None)
 
-    async def complete(
-        self, global_variables: Variables = None, local_variables: Variables = None
-    ) -> None:
-        global_variables = Variables() if global_variables is None else global_variables
-        local_variables = Variables() if local_variables is None else local_variables
+    async def complete(self) -> None:
         _LOGGER.info(f"Task {self.task_id} completed")
         _LOGGER.debug(
-            f"\nGlobals: {global_variables.to_dict()}\nLocals: {local_variables.to_dict()}"
+            f"\nGlobals: {self.global_variables.to_dict()}\nLocals: {self.local_variables.to_dict()}"
         )
         if self._timer is not None:
             self._timer.cancel()
-        await self.handler.complete(self.task_id, self._variables, local_variables)
+        await self.handler.complete(self.task_id, self.global_variables, self.local_variables)
 
     async def failure(
         self, error_message: str, error_details: str, max_retries: int, retry_timeout: int
@@ -73,11 +81,12 @@ class ExternalTask:
         _LOGGER.warn(f"Task {self.task_id} caused an BPMN error with code {error_code}")
         if self._timer is not None:
             self._timer.cancel()
-        await self.handler.bpmn_error(error_code)
+        await self.handler.bpmn_error(self.task_id, error_code)
 
     async def extend_lock(self) -> None:
         await self.handler.extend_lock(self.task_id)
-        self._timer.reset()
+        if self._timer is not None:
+            self._timer.reset()
 
     def _calculate_retries(self, max_retries: int) -> int:
         retries = self._context.get("retries")

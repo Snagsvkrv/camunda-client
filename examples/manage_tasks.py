@@ -46,21 +46,19 @@ class Worker:
 
 async def number_check(task: ExternalTask) -> None:
     try:
-        number = task.get_variable("number")
-        task.set_variable
+        number = task.context_variables["number"]
         print(f"We received {number} for checking...")
-        variables = Variables()
-        variables.set_variable(
+        task.local_variables.set_variable(
             "result", "true" if int(number) % 2 != 0 else "false", Variables.ValueType.STRING
         )
-        await task.complete(local_variables=variables)
+        await task.complete()
     except Exception as err:
         print(f"Oh no! Something went wrong: {err}")
         await task.failure()
 
 
 async def echo(task: ExternalTask) -> None:
-    print(f"Camunda wants to say: {task.get_variable('text')}")
+    print(f"Camunda wants to say: {task.context_variables['text']}")
     await task.complete()
 
 

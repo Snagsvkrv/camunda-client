@@ -62,7 +62,13 @@ class ExternalTaskWorker:
         tasks = []
         if resp_json:
             for context in resp_json:
-                task = ExternalTask(context, self.client, self.config.get("autoExtendLock", False))
+                task = ExternalTask(
+                    context,
+                    self.client,
+                    self.config.get("lockDuration", 0)
+                    if self.config.get("autoExtendLock", False)
+                    else 0,
+                )
                 tasks.append(task)
         _LOGGER.info(f"{len(tasks)} External task(s) found for Topics: {topic_names}")
         return tasks

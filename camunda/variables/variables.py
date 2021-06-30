@@ -23,6 +23,9 @@ class Variables:
     def __init__(self, variables={}):
         self.variables = variables
 
+    def __getitem__(self, key):
+        return self.get_variable(key)
+
     def get_variable(self, variable_name):
         variable = self.variables.get(variable_name, None)
         if not variable:
