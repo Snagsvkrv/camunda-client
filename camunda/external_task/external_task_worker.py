@@ -1,7 +1,6 @@
 import asyncio
-from asyncio import tasks, Task
+from asyncio import Task
 import logging
-import inspect
 from typing import Callable, List, Dict
 
 from camunda.client.external_task_client import (
@@ -91,6 +90,7 @@ class ExternalTaskWorker:
                 retry_timeout=10000,
             )
             _LOGGER.error(f"[{self.worker_id}][{task.topic_name}] - {get_exception_detail(err)}")
+            _LOGGER.debug(logging.exception(err))
         del self.task_dict[task.task_id]
 
     def _get_sleep_seconds(self):

@@ -25,7 +25,7 @@ class EngineClient:
 
     async def start_process(self, process_key, variables, tenant_id=None):
         url = self.get_start_process_instance_url(process_key, tenant_id)
-        body = {"variables": Variables.format(variables)}
+        body = {"variables": variables}
         async with self.session.post(url, headers=self._get_headers(), json=body) as response:
             await raise_exception_if_not_ok(response)
             return await response.json()

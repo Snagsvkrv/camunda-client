@@ -21,16 +21,23 @@ class Variables:
             return any(value == item.value for item in cls)
 
     def __init__(self, variables={}):
-        self.variables = variables
+        self.variables = {}
+        for k, v in variables.items():
+            if not isinstance(v, dict) or "value" not in v:
+                self.variables[k] = {"value": v}
+            else:
+                self.variables[k] = v
 
     def __getitem__(self, key):
         return self.get_variable(key)
+
+    def __setitem__(self, key, value):
+        self.set_variable(key, value)
 
     def get_variable(self, variable_name):
         variable = self.variables.get(variable_name, None)
         if not variable:
             return None
-
         return variable["value"]
 
     def set_variable(self, name, value, value_type=None):
@@ -42,16 +49,3 @@ class Variables:
             data["type"] = value_type
             data["valueInfo"] = {}
         self.variables[name] = data
-
-    def to_dict(self):
-        """
-        Converts the variables to a simple dictionary
-        :return: dict
-            {"var1": {"value": 1}, "var2": {"value": True}}
-            ->
-            {"var1": 1, "var2": True}
-        """
-        result = {}
-        for k, v in self.variables.items():
-            result[k] = v["value"]
-        return result

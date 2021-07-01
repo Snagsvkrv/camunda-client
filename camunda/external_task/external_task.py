@@ -28,6 +28,7 @@ class ExternalTask:
         self._context = context
         self.local_variables = Variables()
         self.global_variables = Variables()
+        self.context_variables = Variables(self._context.get("variables", {}))
         self._timer = None
         if lock_interval:
             # extend lock after 80 percent of the lock duration time has passed
@@ -47,18 +48,11 @@ class ExternalTask:
         return self._context["topicName"]
 
     @property
-    def context_variables(self) -> Dict[str, str]:
-        return self._context.get("variables", {})
-
-    @property
     def tenant_id(self) -> str:
         return self._context.get("tenantId", None)
 
     async def complete(self) -> None:
         _LOGGER.info(f"Task {self.task_id} completed")
-        _LOGGER.debug(
-            f"\nGlobals: {self.global_variables.to_dict()}\nLocals: {self.local_variables.to_dict()}"
-        )
         if self._timer is not None:
             self._timer.cancel()
         await self.handler.complete(self.task_id, self.global_variables, self.local_variables)
