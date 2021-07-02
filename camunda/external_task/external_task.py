@@ -21,6 +21,12 @@ class ExternalTaskHandler(Protocol):
     async def bpmn_error(self, task_id, error_code):
         ...
 
+    async def extend_lock(self, task_id):
+        ...
+
+    async def unlock(self, task_id):
+        ...
+
 
 class ExternalTask:
     def __init__(self, context, handler: ExternalTaskHandler, lock_interval: int):
@@ -51,6 +57,10 @@ class ExternalTask:
     def tenant_id(self) -> str:
         return self._context.get("tenantId", None)
 
+    @property
+    def business_key(self) -> str:
+        return self._context.get("businessKey", None)
+
     async def complete(self) -> None:
         _LOGGER.info(f"Task {self.task_id} completed")
         if self._timer is not None:
@@ -77,14 +87,19 @@ class ExternalTask:
             self._timer.cancel()
         await self.handler.bpmn_error(self.task_id, error_code)
 
+    async def unlock(self) -> None:
+        if self._timer is not None:
+            self._timer.cancel()
+        await self.handler.unlock(self.task_id)
+
     async def extend_lock(self) -> None:
         await self.handler.extend_lock(self.task_id)
         if self._timer is not None:
             self._timer.reset()
 
     def _calculate_retries(self, max_retries: int) -> int:
-        retries = self._context.get("retries")
-        retries = int(retries - 1) if retries else max_retries
+        retries = self._context.get("retries", "")
+        retries = int(retries) - 1 if retries else max_retries
         return retries
 
     def __str__(self) -> str:

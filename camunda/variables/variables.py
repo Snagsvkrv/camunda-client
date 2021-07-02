@@ -34,6 +34,12 @@ class Variables:
     def __setitem__(self, key, value):
         self.set_variable(key, value)
 
+    def __repr__(self) -> str:
+        msg = "Variables:"
+        for k, v in self.variables.items():
+            msg += f"\n  {k} = {v['value']}"
+        return msg
+
     def get_variable(self, variable_name):
         variable = self.variables.get(variable_name, None)
         if not variable:

@@ -37,28 +37,29 @@ class ExternalTaskClient:
     def get_fetch_and_lock_url(self):
         return f"{self.external_task_base_url}/fetchAndLock"
 
-    async def fetch_and_lock(self, topic_names, process_variables=None):
+    async def fetch_and_lock(self, topic_names, business_key=None, process_variables=None):
         url = self.get_fetch_and_lock_url()
         body = {
             "workerId": str(self.worker_id),  # convert to string to make it JSON serializable
             "maxTasks": self.config["maxTasks"],
-            "topics": self._get_topics(topic_names, process_variables),
+            "topics": self._get_topics(topic_names, business_key, process_variables),
             "asyncResponseTimeout": self.config["asyncResponseTimeout"],
         }
         async with self.session.post(url, headers=self._get_headers(), json=body) as response:
             await raise_exception_if_not_ok(response)
             return await response.json()
 
-    def _get_topics(self, topic_names, process_variables):
+    def _get_topics(self, topic_names, business_key, process_variables):
         topics = []
         for topic in str_to_list(topic_names):
-            topics.append(
-                {
-                    "topicName": topic,
-                    "lockDuration": self.config["lockDuration"],
-                    "processVariables": process_variables or {},
-                }
-            )
+            topic_config = {
+                "topicName": topic,
+                "lockDuration": self.config["lockDuration"],
+                "processVariables": process_variables or {},
+            }
+            if business_key:
+                topic_config["businessKey"] = business_key
+            topics.append(topic_config)
         return topics
 
     async def complete(
@@ -100,6 +101,14 @@ class ExternalTaskClient:
         }
         async with self.session.post(url, headers=self._get_headers(), json=body) as response:
             await raise_exception_if_not_ok(response)
+            return response.status == HTTPStatus.NO_CONTENT
+
+    async def unlock(self, task_id: str) -> None:
+        url = f"{self.external_task_base_url}/{task_id}/unlock"
+        logger.debug(f"Unlock task {task_id}")
+        async with self.session.post(url, headers=self._get_headers(), json={}) as response:
+            await raise_exception_if_not_ok(response)
+            print(response)
             return response.status == HTTPStatus.NO_CONTENT
 
     async def bpmn_error(self, task_id, error_code):

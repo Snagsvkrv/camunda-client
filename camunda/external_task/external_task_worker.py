@@ -17,22 +17,33 @@ _LOGGER.addHandler(logging.NullHandler())
 class ExternalTaskWorker:
     DEFAULT_SLEEP_SECONDS = 300
 
-    def __init__(self, worker_id, session, base_url=ENGINE_LOCAL_BASE_URL, config=None):
+    def __init__(
+        self, worker_id, session, base_url=ENGINE_LOCAL_BASE_URL, config=None, business_key=None
+    ):
         self.worker_id = worker_id
         self.client = ExternalTaskClient(self.worker_id, session, base_url, config)
         self.config = config or {}
         self.cancelled = False
+        self.business_key = business_key
+        self.run_lock = asyncio.Lock()
         self.task_dict: Dict[str, Task] = {}
         _LOGGER.info("Created new External Task Worker")
 
     async def subscribe(self, topic_names, action, process_variables=None):
         _LOGGER.info(f"Subscribing to topic {topic_names}")
+        await self.run_lock.acquire()
         while not self.cancelled:
             await self._fetch_and_execute_safe(topic_names, action, process_variables)
+        for task in self.task_dict.values():
+            task.cancel()
+        self.run_lock.release()
         _LOGGER.info("Stopping worker")
 
-    def cancel(self):
+    async def cancel(self):
         self.cancelled = True
+        await self.run_lock.acquire()
+        self.run_lock.release()
+        return
 
     async def _fetch_and_execute_safe(self, topic_names, action, process_variables=None):
         try:
@@ -55,7 +66,7 @@ class ExternalTaskWorker:
             f"Fetching and Locking external tasks for Topics: {topic_names} "
             f"with process variables: {process_variables}"
         )
-        return await self.client.fetch_and_lock(topic_names, process_variables)
+        return await self.client.fetch_and_lock(topic_names, self.business_key, process_variables,)
 
     def _parse_response(self, resp_json, topic_names):
         tasks = []
@@ -90,7 +101,7 @@ class ExternalTaskWorker:
                 retry_timeout=10000,
             )
             _LOGGER.error(f"[{self.worker_id}][{task.topic_name}] - {get_exception_detail(err)}")
-            _LOGGER.debug(logging.exception(err))
+            logging.exception(err)
         del self.task_dict[task.task_id]
 
     def _get_sleep_seconds(self):

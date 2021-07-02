@@ -23,18 +23,22 @@ class EngineClient:
             return f"{self.engine_base_url}/process-definition/key/{process_key}/tenant-id/{tenant_id}/start"
         return f"{self.engine_base_url}/process-definition/key/{process_key}/start"
 
-    async def start_process(self, process_key, variables, tenant_id=None):
+    async def start_process(self, process_key, variables, tenant_id=None, business_key=None):
         url = self.get_start_process_instance_url(process_key, tenant_id)
         body = {"variables": variables}
+        if business_key:
+            body["businessKey"] = business_key
         async with self.session.post(url, headers=self._get_headers(), json=body) as response:
             await raise_exception_if_not_ok(response)
             return await response.json()
 
     async def get_process_instance(
-        self, process_key=None, variables=frozenset([]), tenant_ids=frozenset([])
+        self, process_key=None, variables=None, tenant_ids=None, business_key=None
     ):
         url = f"{self.engine_base_url}/process-instance"
-        url_params = self.__get_process_instance_url_params(process_key, tenant_ids, variables)
+        url_params = self.__get_process_instance_url_params(
+            process_key, tenant_ids or [], variables or [], business_key
+        )
         async with self.session.get(
             url, headers=self._get_headers(), params=url_params
         ) as response:
@@ -94,7 +98,7 @@ class EngineClient:
                 elif response.status not in [HTTPStatus.OK, HTTPStatus.NOT_FOUND]:
                     response.raise_for_status()
 
-    def __get_process_instance_url_params(self, process_key, tenant_ids, variables):
+    def __get_process_instance_url_params(self, process_key, tenant_ids, variables, business_key):
         url_params = {}
         if process_key:
             url_params["processDefinitionKey"] = process_key
@@ -104,6 +108,8 @@ class EngineClient:
         tenant_ids_filter = join(tenant_ids, ",")
         if tenant_ids_filter:
             url_params["tenantIdIn"] = tenant_ids_filter
+        if business_key:
+            url_params["businessKey"] = business_key
         return url_params
 
     def _get_headers(self):
