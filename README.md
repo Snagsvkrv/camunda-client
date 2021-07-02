@@ -282,7 +282,7 @@ class Worker:
 
     async def _quit(self):
         """Cancels the running subcriptions"""
-        self.worker.cancel()
+        await self.worker.cancel()
         # We wait until there is only one asynchronous task left since this will be
         # the very same task that we are currently running.
         print("stopping ...")
