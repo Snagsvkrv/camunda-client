@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Protocol
+from typing import Protocol, Optional
 
 from camunda.variables.variables import Variables
 from ..utils.utils import Timer
@@ -29,7 +29,7 @@ class ExternalTaskHandler(Protocol):
 
 
 class ExternalTask:
-    def __init__(self, context, handler: ExternalTaskHandler, lock_interval: int):
+    def __init__(self, context, handler: ExternalTaskHandler, lock_interval: Optional[int]):
         self.handler = handler
         self._context = context
         self.local_variables = Variables()
