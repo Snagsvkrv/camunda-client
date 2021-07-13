@@ -1,14 +1,16 @@
 import asyncio
 from asyncio import Task
 import logging
-from typing import Callable, List, Dict
+from typing import Callable, List, Dict, Awaitable
+from functools import partial
 
-from camunda.client.external_task_client import (
+from .external_task import ExternalTask
+from .external_task_result import ExternalTaskResult
+from ..client.external_task_client import (
     ExternalTaskClient,
     ENGINE_LOCAL_BASE_URL,
 )
-from camunda.external_task.external_task import ExternalTask
-from camunda.utils.utils import get_exception_detail
+from ..utils.utils import Timer, get_exception_detail
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.NullHandler())
@@ -25,24 +27,29 @@ class ExternalTaskWorker:
         self.config = config or {}
         self.cancelled = False
         self.business_key = business_key
-        self.run_lock = asyncio.Lock()
+        self.run_locks: List[asyncio.Lock] = []
         self.task_dict: Dict[str, Task] = {}
         _LOGGER.info("Created new External Task Worker")
 
     async def subscribe(self, topic_names, action, process_variables=None):
         _LOGGER.info(f"Subscribing to topic {topic_names}")
-        await self.run_lock.acquire()
+        lock = asyncio.Lock()
+        self.run_locks.append(lock)
+        await lock.acquire()
         while not self.cancelled:
+            _LOGGER.debug(f"Locked for {topic_names}")
             await self._fetch_and_execute_safe(topic_names, action, process_variables)
         for task in self.task_dict.values():
             task.cancel()
-        self.run_lock.release()
+        lock.release()
         _LOGGER.info("Stopping worker")
 
     async def cancel(self):
         self.cancelled = True
-        await self.run_lock.acquire()
-        self.run_lock.release()
+        await asyncio.wait([lock.acquire() for lock in self.run_locks])
+        for lock in self.run_locks:
+            lock.release()
+        self.run_locks.clear()
         return
 
     async def _fetch_and_execute_safe(self, topic_names, action, process_variables=None):
@@ -72,13 +79,7 @@ class ExternalTaskWorker:
         tasks = []
         if resp_json:
             for context in resp_json:
-                task = ExternalTask(
-                    context,
-                    self.client,
-                    self.config.get("lockDuration", 0)
-                    if self.config.get("autoExtendLock", False)
-                    else 0,
-                )
+                task = ExternalTask(context)
                 tasks.append(task)
         _LOGGER.info(f"{len(tasks)} External task(s) found for Topics: {topic_names}")
         return tasks
@@ -89,16 +90,49 @@ class ExternalTaskWorker:
                 self.task_dict[task.task_id].cancel()
             self.task_dict[task.task_id] = asyncio.create_task(self._execute_task(task, action))
 
-    async def _execute_task(self, task: ExternalTask, action: Callable):
+    async def _execute_task(
+        self, task: ExternalTask, action: Callable[[ExternalTask], Awaitable[ExternalTaskResult]]
+    ) -> None:
+        _LOGGER.info(f"Executing external task {task.task_id} for Topic: {task.topic_name}")
+
+        lock_duration = (
+            self.config.get("lockDuration", 0) if self.config.get("autoExtendLock", False) else 0
+        )
+
+        # try to extend lock after 80% of the lock duration has been passed
+        timer = (
+            Timer(
+                lock_duration * 0.8 / 1000,
+                partial(self.client.extend_lock, task.task_id),
+                loop=True,
+            )
+            if lock_duration
+            else None
+        )
         try:
-            _LOGGER.info(f"Executing external task {task.task_id} for Topic: {task.topic_name}")
-            await action(task)
+            res = await action(task)
         except Exception as err:
-            await task.failure(
+            res = task.failure(
                 error_message=type(err).__name__,
                 error_details=str(err),
                 max_retries=self.client.max_retries,
                 retry_timeout=10000,
+            )
+        if timer is not None:
+            timer.cancel()
+        if res.is_success():
+            await self.client.complete(
+                res.task.task_id,
+                global_variables=res.task.global_variables,
+                local_variables=res.task.local_variables,
+            )
+        elif res.is_failure():
+            await self.client.failure(
+                res.task.task_id,
+                error_message=res.error_message,
+                error_details=res.error_details,
+                retries=res.retries,
+                retry_timeout=res.retry_timeout,
             )
             _LOGGER.error(f"[{self.worker_id}][{task.topic_name}] - {get_exception_detail(err)}")
             logging.exception(err)
@@ -106,3 +140,13 @@ class ExternalTaskWorker:
 
     def _get_sleep_seconds(self):
         return self.config.get("sleepSeconds", self.DEFAULT_SLEEP_SECONDS)
+
+    # async def unlock(self) -> None:
+    #     if self._timer is not None:
+    #         self._timer.cancel()
+    #     await self.handler.unlock(self.task_id)
+
+    # async def extend_lock(self) -> None:
+    #     await self.handler.extend_lock(self.task_id)
+    #     if self._timer is not None:
+    #         self._timer.reset()

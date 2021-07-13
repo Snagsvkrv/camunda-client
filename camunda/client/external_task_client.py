@@ -62,15 +62,13 @@ class ExternalTaskClient:
             topics.append(topic_config)
         return topics
 
-    async def complete(
-        self, task_id, global_variables: Variables, local_variables: Variables = None
-    ):
+    async def complete(self, task_id, global_variables: Variables, local_variables: Variables):
         url = f"{self.external_task_base_url}/{task_id}/complete"
 
         body = {
             "workerId": self.worker_id,
             "variables": global_variables.variables,
-            "localVariables": local_variables.variables if local_variables else {},
+            "localVariables": local_variables.variables,
         }
 
         async with self.session.post(url, headers=self._get_headers(), json=body) as response:
@@ -108,7 +106,6 @@ class ExternalTaskClient:
         logger.debug(f"Unlock task {task_id}")
         async with self.session.post(url, headers=self._get_headers(), json={}) as response:
             await raise_exception_if_not_ok(response)
-            print(response)
             return response.status == HTTPStatus.NO_CONTENT
 
     async def bpmn_error(self, task_id, error_code):

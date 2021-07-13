@@ -10,7 +10,7 @@ def context():
 
 
 def test_create_task(context, mocker: MockerFixture):
-    task = ExternalTask(context, None)
+    task = ExternalTask(context)
     assert task.task_id == context["id"]
     assert task.worker_id == context["workerId"]
     assert task.topic_name == context["topicName"]
@@ -18,13 +18,8 @@ def test_create_task(context, mocker: MockerFixture):
 
 @pytest.mark.asyncio
 async def test_task_complete(context, mocker: MockerFixture):
-    handler = mocker.AsyncMock()
-    task = ExternalTask(context, handler)
-    await task.complete()
-    assert handler.complete.called
-    assert not handler.failure.called
-    call = handler.complete.call_args
-    assert call.args[0] == context["id"]
+    task = ExternalTask(context)
+    res = task.complete()
 
 
 @pytest.mark.asyncio
@@ -33,29 +28,19 @@ async def test_task_fail(context, mocker: MockerFixture):
     error_details = "This method has not been implemented"
     max_retries = 3
     retry_timeout = 5
-    handler = mocker.AsyncMock()
-    task = ExternalTask(context, handler)
-    await task.failure(
+    task = ExternalTask(context)
+    res = task.failure(
         error_message=error_message,
         error_details=error_details,
         max_retries=max_retries,
         retry_timeout=retry_timeout,
     )
-    assert not handler.complete.called
-    assert handler.failure.called
-    args = handler.failure.call_args.args
-    assert args[1] == error_message
-    assert args[4] == retry_timeout
 
 
 @pytest.mark.asyncio
 async def test_task_bpmn_error(context, mocker: MockerFixture):
-    handler = mocker.AsyncMock()
-    task = ExternalTask(context, handler)
-    await task.bpmn_error("de.ubi.nca.RuntimeException")
-    assert not handler.complete.called
-    assert handler.bpmn_error.called
-    assert handler.bpmn_error.call_args.args[0] == "de.ubi.nca.RuntimeException"
+    task = ExternalTask(context)
+    res = task.bpmn_error("de.ubi.nca.RuntimeException")
 
 
 # @pytest.mark.asyncio

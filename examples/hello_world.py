@@ -3,6 +3,7 @@ import asyncio
 
 from camunda.external_task.external_task import ExternalTask
 from camunda.external_task.external_task_worker import ExternalTaskWorker
+from camunda.external_task.external_task_result import ExternalTaskResult
 
 
 async def main():
@@ -23,12 +24,12 @@ async def main():
 
 
 # this will be called when a task for the subscribed topic is available
-async def process(task: ExternalTask) -> None:
+async def process(task: ExternalTask) -> ExternalTaskResult:
     print("I got a task!")
-    # To communicate the successfull processing of a task, we await `task.complete`.
+    # To communicate the successfull processing of a task, we return an ExternalTaskResult created by `task.complete` .
     # If we call `task.failure` instead, Camunda will publish the task again until
     # some client finally completes it or the maximum amount of retries is reached.
-    await task.complete()
+    return task.complete()
 
 
 # run the main task

@@ -18,9 +18,10 @@ def join(list_of_values, separator):
 
 
 class Timer:
-    def __init__(self, timeout, callback):
+    def __init__(self, timeout, callback, loop=False):
         self._timeout = timeout
         self._callback = callback
+        self._loop = loop
         self._task = asyncio.create_task(self._run())
 
     def reset(self):
@@ -29,6 +30,8 @@ class Timer:
     async def _run(self):
         await asyncio.sleep(self._timeout)
         await self._callback()
+        if self._loop:
+            self.reset()
 
     def cancel(self):
         self._task.cancel()

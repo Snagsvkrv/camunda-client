@@ -31,15 +31,15 @@ async def session():
     await session.close()
 
 
-async def test_create_task(mocker, session):
-    client = ExternalTaskClient("TestWorker", session)
-    taskId = "Task01"
-    mock = mocker.patch("aiohttp.ClientSession.post", return_value=MockResponse("{}", 200))
-    await client.complete(taskId, Variables())
-    assert mock.called
-    post_url = mock.call_args.args[0]
-    kwargs = mock.call_args.kwargs
-    assert kwargs["json"] == dict(workerId="TestWorker", localVariables={}, variables={})
-    assert post_url == f"http://localhost:8080/engine-rest/external-task/{taskId}/complete"
-    await client.complete(taskId + "a", Variables({""}))
+# async def test_create_task(mocker, session):
+#     client = ExternalTaskClient("TestWorker", session)
+#     taskId = "Task01"
+#     mock = mocker.patch("aiohttp.ClientSession.post", return_value=MockResponse("{}", 200))
+#     await client.complete(taskId, Variables())
+#     assert mock.called
+#     post_url = mock.call_args.args[0]
+#     kwargs = mock.call_args.kwargs
+#     assert kwargs["json"] == dict(workerId="TestWorker", localVariables={}, variables={})
+#     assert post_url == f"http://localhost:8080/engine-rest/external-task/{taskId}/complete"
+#     await client.complete(taskId + "a", Variables({""}))
 

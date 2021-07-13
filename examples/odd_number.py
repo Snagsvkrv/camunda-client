@@ -3,6 +3,7 @@ import asyncio
 
 from camunda.external_task.external_task import ExternalTask, Variables
 from camunda.external_task.external_task_worker import ExternalTaskWorker
+from camunda.external_task.external_task_result import ExternalTaskResult
 
 
 async def main():
@@ -22,10 +23,9 @@ async def main():
         await worker.subscribe(topic_names="EchoTask", action=echo)
 
 
-async def number_check(task: ExternalTask) -> None:
+async def number_check(task: ExternalTask) -> ExternalTaskResult:
     try:
-        number = task.get_variable("number")
-        task.set_variable
+        number = task.context_variables["number"]
         print(f"We received {number} for checking...")
         # We set a locally scoped variable 'result' to 'true' or 'false'
         task.local_variables.set_variable(
@@ -34,17 +34,22 @@ async def number_check(task: ExternalTask) -> None:
         # We pass the variables object as LOCAL variables which will only be available in the context of the task
         # that called the external task worker. The result must be assigned in case it should be used somewhere else.
         # Just have a look at the odd_number.bpmn to see how.
-        await task.complete()
+        return task.complete()
     # If your input could not be parsed with `int()` the task will fail
     # and another external service could try to do better.
     except Exception as err:
         print(f"Oh no! Something went wrong: {err}")
-        await task.failure()
+        return task.failure(
+            error_message=err.__class__.__name__,
+            error_details=str(err),
+            max_retries=3,
+            retry_timeout=5000,
+        )
 
 
-async def echo(task: ExternalTask) -> None:
+async def echo(task: ExternalTask) -> ExternalTaskResult:
     print(f"Camunda wants to say: {task.context_variables['text']}")
-    await task.complete()
+    return task.complete()
 
 
 # run the main task

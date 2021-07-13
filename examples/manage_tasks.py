@@ -3,6 +3,7 @@ import asyncio
 
 from camunda.external_task.external_task import ExternalTask, Variables
 from camunda.external_task.external_task_worker import ExternalTaskWorker
+from camunda.external_task.external_task_result import ExternalTaskResult
 
 
 class Worker:
@@ -28,38 +29,25 @@ class Worker:
             await self.worker.subscribe(topic_names="EchoTask", action=echo)
 
     def stop(self):
-        self.loop.run_until_complete(self._quit())
-
-    async def _quit(self):
-        """Cancels the running subcriptions"""
-        await self.worker.cancel()
-        # We wait until there is only one asynchronous task left since this will be
-        # the very same task that we are currently running.
-        print("stopping ...")
-        running_tasks = len(asyncio.all_tasks())
-        while running_tasks > 1:
-            print(f"waiting for {running_tasks - 1} subscriptions to return ...")
-            await asyncio.sleep(5)
-            running_tasks = len(asyncio.all_tasks())
-        print("stopped")
+        self.loop.run_until_complete(self.worker.cancel())
 
 
-async def number_check(task: ExternalTask) -> None:
+async def number_check(task: ExternalTask) -> ExternalTaskResult:
     try:
         number = task.context_variables["number"]
         print(f"We received {number} for checking...")
         task.local_variables.set_variable(
             "result", "true" if int(number) % 2 != 0 else "false", Variables.ValueType.STRING
         )
-        await task.complete()
+        return task.complete()
     except Exception as err:
         print(f"Oh no! Something went wrong: {err}")
-        await task.failure()
+        return task.failure()
 
 
-async def echo(task: ExternalTask) -> None:
+async def echo(task: ExternalTask) -> ExternalTaskResult:
     print(f"Camunda wants to say: {task.context_variables['text']}")
-    await task.complete()
+    return task.complete()
 
 
 # run the main task
@@ -67,4 +55,8 @@ try:
     worker = Worker()
     worker.start()
 except KeyboardInterrupt:
+    # Stopping workers might take a while.
+    # How long it will take depends on the chosen asyncResponseTimeout (default is 30000 ms)
+    print(f"Stopping workers...")
     worker.stop()
+print(f"All done!")
