@@ -39,8 +39,11 @@ class ExternalTaskWorker:
         while not self.cancelled:
             _LOGGER.debug(f"Locked for {topic_names}")
             await self._fetch_and_execute_safe(topic_names, action, process_variables)
-        for task in self.task_dict.values():
+        unlock_tasks = []
+        for task_id, task in self.task_dict.items():
             task.cancel()
+            unlock_tasks.append(self.client.unlock(task_id))
+        await asyncio.wait(unlock_tasks)
         lock.release()
         _LOGGER.info("Stopping worker")
 

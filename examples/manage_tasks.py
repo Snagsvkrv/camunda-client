@@ -47,6 +47,7 @@ async def number_check(task: ExternalTask) -> ExternalTaskResult:
 
 async def echo(task: ExternalTask) -> ExternalTaskResult:
     print(f"Camunda wants to say: {task.context_variables['text']}")
+    await asyncio.sleep(1000)
     return task.complete()
 
 
@@ -56,7 +57,7 @@ try:
     worker.start()
 except KeyboardInterrupt:
     # Stopping workers might take a while.
-    # How long it will take depends on the chosen asyncResponseTimeout (default is 30000 ms)
+    # How long it will take depends on the chosen asyncResponseTimeout (default is 30000)
     print(f"Stopping workers...")
     worker.stop()
 print(f"All done!")
