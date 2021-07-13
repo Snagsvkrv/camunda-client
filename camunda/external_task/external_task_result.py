@@ -7,9 +7,9 @@ class ExternalTaskResult:
 
     task: "ExternalTask"
     success: bool = False
-    bpmn_error_code: Optional[int] = None
+    bpmn_error_code: Optional[str] = None
     error_message: Optional[str] = None
-    error_details: Optional[dict] = None
+    error_details: Optional[str] = None
     retries: int = 0
     retry_timeout: int = 300000
 

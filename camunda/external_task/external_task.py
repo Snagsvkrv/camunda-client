@@ -1,8 +1,4 @@
 import logging
-from re import I
-from typing import Optional
-from dataclasses import dataclass
-
 from camunda.variables.variables import Variables
 from .external_task_result import ExternalTaskResult
 
