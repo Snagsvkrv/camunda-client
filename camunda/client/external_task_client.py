@@ -104,9 +104,12 @@ class ExternalTaskClient:
     async def unlock(self, task_id: str) -> None:
         url = f"{self.external_task_base_url}/{task_id}/unlock"
         logger.debug(f"Unlock task {task_id}")
-        async with self.session.post(url, headers=self._get_headers(), json={}) as response:
-            await raise_exception_if_not_ok(response)
-            return response.status == HTTPStatus.NO_CONTENT
+        try:
+            async with self.session.post(url, headers=self._get_headers(), json={}) as response:
+                await raise_exception_if_not_ok(response)
+                return response.status == HTTPStatus.NO_CONTENT
+        except Exception as err:
+            logger.warn(f"Unlocking task failed: {err}")
 
     async def bpmn_error(self, task_id, error_code):
         url = f"{self.external_task_base_url}/{task_id}/bpmnError"

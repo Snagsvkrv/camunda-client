@@ -40,12 +40,14 @@ class ExternalTaskWorker:
             _LOGGER.debug(f"Locked for {topic_names}")
             await self._fetch_and_execute_safe(topic_names, action, process_variables)
         unlock_tasks = []
+        _LOGGER.info("Cancellation requested.")
         for task_id, task in self.task_dict.items():
             task.cancel()
             unlock_tasks.append(self.client.unlock(task_id))
-        await asyncio.wait(unlock_tasks)
+        if unlock_tasks:
+            await asyncio.wait(unlock_tasks)
         lock.release()
-        _LOGGER.info("Stopping worker")
+        _LOGGER.info("Worker stopped.")
 
     async def cancel(self):
         self.cancelled = True
@@ -72,7 +74,7 @@ class ExternalTaskWorker:
         await self._execute_tasks(tasks, action)
 
     async def _fetch_and_lock(self, topic_names, process_variables=None):
-        _LOGGER.info(
+        _LOGGER.debug(
             f"Fetching and Locking external tasks for Topics: {topic_names} "
             f"with process variables: {process_variables}"
         )
@@ -84,7 +86,7 @@ class ExternalTaskWorker:
             for context in resp_json:
                 task = ExternalTask(context)
                 tasks.append(task)
-        _LOGGER.info(f"{len(tasks)} External task(s) found for Topics: {topic_names}")
+        _LOGGER.debug(f"{len(tasks)} External task(s) found for Topics: {topic_names}")
         return tasks
 
     async def _execute_tasks(self, tasks: List[ExternalTask], action):
@@ -114,6 +116,12 @@ class ExternalTaskWorker:
         )
         try:
             res = await action(task)
+            _LOGGER.debug(f"Task {task.task_id} is done!")
+        except asyncio.CancelledError:
+            _LOGGER.info(f"Task {task.task_id} has been cancelled.")
+            if timer is not None:
+                timer.cancel()
+            return
         except Exception as err:
             res = task.failure(
                 error_message=type(err).__name__,
