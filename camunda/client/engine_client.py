@@ -70,12 +70,16 @@ class EngineClient:
                 elif response.status != HTTPStatus.OK:
                     response.raise_for_status()
 
-    async def send_message(self, message_name, correlation_keys={}, process_variables={}):
+    async def send_message(
+        self, message_name, correlation_keys={}, process_variables={}, business_key=None
+    ):
         body = {
             "messageName": message_name,
             "correlationKeys": correlation_keys,
             "processVariables": process_variables,
         }
+        if business_key:
+            body["businessKey"] = business_key
         async with self.session.post(f"{self.engine_base_url}/message", json=body) as response:
             if response.status == HTTPStatus.OK:
                 return await response.json()
