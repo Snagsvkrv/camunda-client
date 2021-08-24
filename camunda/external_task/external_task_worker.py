@@ -129,22 +129,26 @@ class ExternalTaskWorker:
                 max_retries=self.client.max_retries,
                 retry_timeout=10000,
             )
+            _LOGGER.error(f"[{self.worker_id}][{task.topic_name}] - {get_exception_detail(err)}")
+            logging.exception(err)
         if timer is not None:
             timer.cancel()
-        if res.is_success():
-            await self.client.complete(
-                res.task.task_id,
-                global_variables=res.task.global_variables,
-                local_variables=res.task.local_variables,
-            )
-        elif res.is_failure():
-            await self.client.failure(
-                res.task.task_id,
-                error_message=res.error_message,
-                error_details=res.error_details,
-                retries=res.retries,
-                retry_timeout=res.retry_timeout,
-            )
+        try:
+            if res.is_success():
+                await self.client.complete(
+                    res.task.task_id,
+                    global_variables=res.task.global_variables,
+                    local_variables=res.task.local_variables,
+                )
+            elif res.is_failure():
+                await self.client.failure(
+                    res.task.task_id,
+                    error_message=res.error_message,
+                    error_details=res.error_details,
+                    retries=res.retries,
+                    retry_timeout=res.retry_timeout,
+                )
+        except Exception as err:
             _LOGGER.error(f"[{self.worker_id}][{task.topic_name}] - {get_exception_detail(err)}")
             logging.exception(err)
         del self.task_dict[task.task_id]

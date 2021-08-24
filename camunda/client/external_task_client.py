@@ -70,7 +70,7 @@ class ExternalTaskClient:
             "variables": global_variables.variables,
             "localVariables": local_variables.variables,
         }
-
+        logger.debug(f"Complete task {task_id} with {body}.")
         async with self.session.post(url, headers=self._get_headers(), json=body) as response:
             await raise_exception_if_not_ok(response)
             return response.status == HTTPStatus.NO_CONTENT
