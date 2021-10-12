@@ -34,6 +34,10 @@ class ExternalTaskClient:
     def max_retries(self):
         return self.config["retries"]
 
+    @property
+    def retry_timeout(self):
+        return self.config["retryTimeout"]
+
     def get_fetch_and_lock_url(self):
         return f"{self.external_task_base_url}/fetchAndLock"
 
