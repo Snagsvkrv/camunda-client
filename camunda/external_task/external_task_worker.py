@@ -122,12 +122,12 @@ class ExternalTaskWorker:
             if timer is not None:
                 timer.cancel()
             return
-        except Exception as err:
+        except BaseException as err:
             res = task.failure(
                 error_message=type(err).__name__,
                 error_details=str(err),
                 max_retries=self.client.max_retries,
-                retry_timeout=10000,
+                retry_timeout=self.client.retry_timeout,
             )
             _LOGGER.error(f"[{self.worker_id}][{task.topic_name}] - {get_exception_detail(err)}")
             logging.exception(err)
@@ -141,6 +141,8 @@ class ExternalTaskWorker:
                     local_variables=res.task.local_variables,
                 )
             elif res.is_failure():
+                _LOGGER.warning(f"{res.task.task_id} failed. Retry in {res.retry_timeout} ms. {res.retries} left.")
+
                 await self.client.failure(
                     res.task.task_id,
                     error_message=res.error_message,
