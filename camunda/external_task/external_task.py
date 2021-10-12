@@ -1,13 +1,14 @@
 import logging
 from camunda.variables.variables import Variables
 from .external_task_result import ExternalTaskResult
+from typing import Dict
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addHandler(logging.NullHandler())
 
 
 class ExternalTask:
-    def __init__(self, context):
+    def __init__(self, context: Dict[str, str]):
         self._context = context
         self.local_variables = Variables()
         self.global_variables = Variables()
@@ -27,17 +28,21 @@ class ExternalTask:
 
     @property
     def tenant_id(self) -> str:
-        return self._context.get("tenantId", None)
+        return self._context.get("tenantId", "")
 
     @property
     def business_key(self) -> str:
-        return self._context.get("businessKey", None)
+        return self._context.get("businessKey", "")
 
     def complete(self) -> ExternalTaskResult:
         return ExternalTaskResult(self, success=True)
 
     def failure(
-        self, error_message: str, error_details: str, max_retries: int, retry_timeout: int
+        self,
+        error_message: str,
+        error_details: str,
+        max_retries: int,
+        retry_timeout: int,
     ) -> ExternalTaskResult:
         return ExternalTaskResult(
             self,
