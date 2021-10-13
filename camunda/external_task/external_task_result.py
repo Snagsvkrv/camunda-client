@@ -1,5 +1,14 @@
+"""
+camunda.external_task_result
+============================
+"""
+
+
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..external_task import ExternalTask
 
 
 @dataclass
@@ -14,10 +23,16 @@ class ExternalTaskResult:
     retry_timeout: int = 300000
 
     def is_success(self):
-        return self.success and self.bpmn_error_code is None and self.error_message is None
+        return (
+            self.success and self.bpmn_error_code is None and self.error_message is None
+        )
 
     def is_failure(self):
-        return not self.success and self.error_message is not None and not self.is_bpmn_error()
+        return (
+            not self.success
+            and self.error_message is not None
+            and not self.is_bpmn_error()
+        )
 
     def is_bpmn_error(self):
         return not self.success and self.bpmn_error_code

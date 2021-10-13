@@ -23,21 +23,34 @@ class EngineClient:
             return f"{self.engine_base_url}/process-definition/key/{process_key}/tenant-id/{tenant_id}/start"
         return f"{self.engine_base_url}/process-definition/key/{process_key}/start"
 
-    async def start_process(self, process_key, variables, tenant_id=None, business_key=None):
+    async def start_process(
+        self, process_key, variables, tenant_id=None, business_key=None
+    ):
         url = self.get_start_process_instance_url(process_key, tenant_id)
         body = {"variables": variables}
         if business_key:
             body["businessKey"] = business_key
-        async with self.session.post(url, headers=self._get_headers(), json=body) as response:
+        async with self.session.post(
+            url, headers=self._get_headers(), json=body
+        ) as response:
             await raise_exception_if_not_ok(response)
             return await response.json()
 
     async def get_process_instance(
-        self, process_ids=None, process_key=None, variables=None, tenant_ids=None, business_key=None
+        self,
+        process_ids=None,
+        process_key=None,
+        variables=None,
+        tenant_ids=None,
+        business_key=None,
     ):
         url = f"{self.engine_base_url}/process-instance"
         url_params = self.__get_process_instance_url_params(
-            process_ids or [], process_key or "", tenant_ids or [], variables or {}, business_key
+            process_ids or [],
+            process_key or "",
+            tenant_ids or [],
+            variables or {},
+            business_key,
         )
         async with self.session.get(
             url, headers=self._get_headers(), params=url_params
@@ -56,7 +69,9 @@ class EngineClient:
             base_name = basename(p)
             no_ext, _ = splitext(base_name)
             data = FormData()
-            data.add_field("file", open(p, "rb"), filename=base_name, content_type="text/xml")
+            data.add_field(
+                "file", open(p, "rb"), filename=base_name, content_type="text/xml"
+            )
             data.add_field("deployment-name", no_ext)
             data.add_field("deployment-source", "external-task-client-python")
             data.add_field("deploy-changed-only", "true")
@@ -80,7 +95,9 @@ class EngineClient:
         }
         if business_key:
             body["businessKey"] = business_key
-        async with self.session.post(f"{self.engine_base_url}/message", json=body) as response:
+        async with self.session.post(
+            f"{self.engine_base_url}/message", json=body
+        ) as response:
             if response.status == HTTPStatus.OK:
                 return await response.json()
             elif response.status == HTTPStatus.BAD_REQUEST:
@@ -88,7 +105,9 @@ class EngineClient:
             else:
                 response.raise_for_status()
 
-    async def stop_processes(self, process_ids=None, tenant_ids=None, business_key=None):
+    async def stop_processes(
+        self, process_ids=None, tenant_ids=None, business_key=None
+    ):
         params = dict(skipCustomListeners="true", skipIoMappings="true")
         process_instances_url = f"{self.engine_base_url}/process-instance"
         if not process_ids:

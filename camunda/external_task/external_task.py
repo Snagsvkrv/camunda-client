@@ -57,8 +57,8 @@ class ExternalTask:
         return ExternalTaskResult(self, success=False, bpmn_error_code=error_code)
 
     def _calculate_retries(self, max_retries: int) -> int:
-        retries = self._context.get("retries", "")
-        retries = int(retries) - 1 if retries else max_retries
+        retry_config = self._context.get("retries", "")
+        retries = int(retry_config) - 1 if retry_config else max_retries
         return retries
 
     def __str__(self) -> str:

@@ -18,7 +18,9 @@ class ExternalTaskClient:
         "retryTimeout": 30000,
     }
 
-    def __init__(self, worker_id, session, engine_base_url=ENGINE_LOCAL_BASE_URL, config=None):
+    def __init__(
+        self, worker_id, session, engine_base_url=ENGINE_LOCAL_BASE_URL, config=None
+    ):
         self.worker_id = worker_id
         self.external_task_base_url = engine_base_url + "/external-task"
         self.config = self.default_config.copy()
@@ -41,15 +43,21 @@ class ExternalTaskClient:
     def get_fetch_and_lock_url(self):
         return f"{self.external_task_base_url}/fetchAndLock"
 
-    async def fetch_and_lock(self, topic_names, business_key=None, process_variables=None):
+    async def fetch_and_lock(
+        self, topic_names, business_key=None, process_variables=None
+    ):
         url = self.get_fetch_and_lock_url()
         body = {
-            "workerId": str(self.worker_id),  # convert to string to make it JSON serializable
+            "workerId": str(
+                self.worker_id
+            ),  # convert to string to make it JSON serializable
             "maxTasks": self.config["maxTasks"],
             "topics": self._get_topics(topic_names, business_key, process_variables),
             "asyncResponseTimeout": self.config["asyncResponseTimeout"],
         }
-        async with self.session.post(url, headers=self._get_headers(), json=body) as response:
+        async with self.session.post(
+            url, headers=self._get_headers(), json=body
+        ) as response:
             await raise_exception_if_not_ok(response)
             return await response.json()
 
@@ -66,7 +74,9 @@ class ExternalTaskClient:
             topics.append(topic_config)
         return topics
 
-    async def complete(self, task_id, global_variables: Variables, local_variables: Variables):
+    async def complete(
+        self, task_id, global_variables: Variables, local_variables: Variables
+    ):
         url = f"{self.external_task_base_url}/{task_id}/complete"
 
         body = {
@@ -75,11 +85,15 @@ class ExternalTaskClient:
             "localVariables": local_variables.variables,
         }
         logger.debug(f"Complete task {task_id} with {body}.")
-        async with self.session.post(url, headers=self._get_headers(), json=body) as response:
+        async with self.session.post(
+            url, headers=self._get_headers(), json=body
+        ) as response:
             await raise_exception_if_not_ok(response)
             return response.status == HTTPStatus.NO_CONTENT
 
-    async def failure(self, task_id, error_message, error_details, retries, retry_timeout):
+    async def failure(
+        self, task_id, error_message, error_details, retries, retry_timeout
+    ):
         url = f"{self.external_task_base_url}/{task_id}/failure"
         body = {
             "workerId": self.worker_id,
@@ -90,7 +104,9 @@ class ExternalTaskClient:
         if error_details:
             body["errorDetails"] = error_details
 
-        async with self.session.post(url, headers=self._get_headers(), json=body) as response:
+        async with self.session.post(
+            url, headers=self._get_headers(), json=body
+        ) as response:
             await raise_exception_if_not_ok(response)
             return response.status == HTTPStatus.NO_CONTENT
 
@@ -101,7 +117,9 @@ class ExternalTaskClient:
             "workerId": self.worker_id,
             "newDuration": self.lock_duration,
         }
-        async with self.session.post(url, headers=self._get_headers(), json=body) as response:
+        async with self.session.post(
+            url, headers=self._get_headers(), json=body
+        ) as response:
             await raise_exception_if_not_ok(response)
             return response.status == HTTPStatus.NO_CONTENT
 
@@ -109,7 +127,9 @@ class ExternalTaskClient:
         url = f"{self.external_task_base_url}/{task_id}/unlock"
         logger.debug(f"Unlock task {task_id}")
         try:
-            async with self.session.post(url, headers=self._get_headers(), json={}) as response:
+            async with self.session.post(
+                url, headers=self._get_headers(), json={}
+            ) as response:
                 await raise_exception_if_not_ok(response)
                 return response.status == HTTPStatus.NO_CONTENT
         except Exception as err:
@@ -122,7 +142,9 @@ class ExternalTaskClient:
             "errorCode": error_code,
         }
 
-        async with self.session.post(url, headers=self._get_headers(), json=body) as response:
+        async with self.session.post(
+            url, headers=self._get_headers(), json=body
+        ) as response:
             response.raise_for_status()
             return response.status == HTTPStatus.NO_CONTENT
 

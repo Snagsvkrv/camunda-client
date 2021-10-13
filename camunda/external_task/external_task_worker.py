@@ -20,7 +20,12 @@ class ExternalTaskWorker:
     DEFAULT_SLEEP_SECONDS = 300
 
     def __init__(
-        self, worker_id, session, base_url=ENGINE_LOCAL_BASE_URL, config=None, business_key=None
+        self,
+        worker_id,
+        session,
+        base_url=ENGINE_LOCAL_BASE_URL,
+        config=None,
+        business_key=None,
     ):
         self.worker_id = worker_id
         self.client = ExternalTaskClient(self.worker_id, session, base_url, config)
@@ -57,7 +62,9 @@ class ExternalTaskWorker:
         self.run_locks.clear()
         return
 
-    async def _fetch_and_execute_safe(self, topic_names, action, process_variables=None):
+    async def _fetch_and_execute_safe(
+        self, topic_names, action, process_variables=None
+    ):
         try:
             await self.fetch_and_execute(topic_names, action, process_variables)
         except Exception as e:
@@ -78,7 +85,11 @@ class ExternalTaskWorker:
             f"Fetching and Locking external tasks for Topics: {topic_names} "
             f"with process variables: {process_variables}"
         )
-        return await self.client.fetch_and_lock(topic_names, self.business_key, process_variables,)
+        return await self.client.fetch_and_lock(
+            topic_names,
+            self.business_key,
+            process_variables,
+        )
 
     def _parse_response(self, resp_json, topic_names):
         tasks = []
@@ -93,15 +104,23 @@ class ExternalTaskWorker:
         for task in tasks:
             if task.task_id in self.task_dict:
                 self.task_dict[task.task_id].cancel()
-            self.task_dict[task.task_id] = asyncio.create_task(self._execute_task(task, action))
+            self.task_dict[task.task_id] = asyncio.create_task(
+                self._execute_task(task, action)
+            )
 
     async def _execute_task(
-        self, task: ExternalTask, action: Callable[[ExternalTask], Awaitable[ExternalTaskResult]]
+        self,
+        task: ExternalTask,
+        action: Callable[[ExternalTask], Awaitable[ExternalTaskResult]],
     ) -> None:
-        _LOGGER.info(f"Executing external task {task.task_id} for Topic: {task.topic_name}")
+        _LOGGER.info(
+            f"Executing external task {task.task_id} for Topic: {task.topic_name}"
+        )
 
         lock_duration = (
-            self.config.get("lockDuration", 0) if self.config.get("autoExtendLock", False) else 0
+            self.config.get("lockDuration", 0)
+            if self.config.get("autoExtendLock", False)
+            else 0
         )
 
         # try to extend lock after 80% of the lock duration has been passed
@@ -129,7 +148,9 @@ class ExternalTaskWorker:
                 max_retries=self.client.max_retries,
                 retry_timeout=self.client.retry_timeout,
             )
-            _LOGGER.error(f"[{self.worker_id}][{task.topic_name}] - {get_exception_detail(err)}")
+            _LOGGER.error(
+                f"[{self.worker_id}][{task.topic_name}] - {get_exception_detail(err)}"
+            )
             logging.exception(err)
         if timer is not None:
             timer.cancel()
@@ -141,7 +162,9 @@ class ExternalTaskWorker:
                     local_variables=res.task.local_variables,
                 )
             elif res.is_failure():
-                _LOGGER.warning(f"{res.task.task_id} failed. Retry in {res.retry_timeout} ms. {res.retries} left.")
+                _LOGGER.warning(
+                    f"{res.task.task_id} failed. Retry in {res.retry_timeout} ms. {res.retries} left."
+                )
 
                 await self.client.failure(
                     res.task.task_id,
@@ -151,7 +174,9 @@ class ExternalTaskWorker:
                     retry_timeout=res.retry_timeout,
                 )
         except Exception as err:
-            _LOGGER.error(f"[{self.worker_id}][{task.topic_name}] - {get_exception_detail(err)}")
+            _LOGGER.error(
+                f"[{self.worker_id}][{task.topic_name}] - {get_exception_detail(err)}"
+            )
             logging.exception(err)
         del self.task_dict[task.task_id]
 
