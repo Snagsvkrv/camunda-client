@@ -1,7 +1,7 @@
 # avikom-camunda-client
 
 [![Version](https://img.shields.io/badge/version-0.7.0-orange.svg)](https://github.com/OpenAvikom/camunda-client)
-[![Build Status](https://github.com/OpenAvikom/camunda-client/actions/workflows/pytest.yml/badge.svg)](https://github.com/OpenAvikom/camunda-client/actions?query=workflow%3Apytest)
+[![Build Status](https://github.com/OpenAvikom/camunda-client/actions/workflows/python-package.yml/badge.svg)](https://github.com/OpenAvikom/camunda-client/actions?query=workflow%python-package)
 [![PyPi](https://img.shields.io/pypi/v/avikom-camunda-client.svg)](https://pypi.org/project/avikom-camunda-client)
 
 
