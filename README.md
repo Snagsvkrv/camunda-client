@@ -3,6 +3,8 @@
 [![Version](https://img.shields.io/badge/version-0.7.0-orange.svg)](https://github.com/OpenAvikom/camunda-client)
 [![Build Status](https://github.com/OpenAvikom/camunda-client/actions/workflows/python-package.yml/badge.svg)](https://github.com/OpenAvikom/camunda-client/actions/workflows/python-package.yml)
 [![PyPI](https://img.shields.io/pypi/v/avikom-camunda-client.svg)](https://pypi.org/project/avikom-camunda-client)
+[![GitHub commits](https://img.shields.io/github/commits-since/OpenAvikom/camunda-client/0.7.0.svg)](https://github.com/OpenAvikom/camunda-client/compare/0.7.0...master)
+[![License](https://img.shields.io/github/license/OpenAvikom/camunda-client.svg)](LICENSE)
 
 
 This fork of [yogeshrnaik/camunda-external-task-client-python3](https://github.com/yogeshrnaik/camunda-external-task-client-python3) makes use of `async/await` and operates workers asynchronously rather than threaded. Additionally, it contains some convenience functions that wrap the Camunda REST API and speed up development.
