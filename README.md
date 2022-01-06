@@ -1,9 +1,9 @@
 # avikom-camunda-client
 
-[![Version](https://img.shields.io/badge/version-0.7.0-orange.svg)](https://github.com/OpenAvikom/camunda-client)
+[![Version](https://img.shields.io/badge/version-0.8.0-orange.svg)](https://github.com/OpenAvikom/camunda-client)
 [![Build Status](https://github.com/OpenAvikom/camunda-client/actions/workflows/python-package.yml/badge.svg)](https://github.com/OpenAvikom/camunda-client/actions/workflows/python-package.yml)
 [![PyPI](https://img.shields.io/pypi/v/avikom-camunda-client.svg)](https://pypi.org/project/avikom-camunda-client)
-[![GitHub commits](https://img.shields.io/github/commits-since/OpenAvikom/camunda-client/0.7.0.svg)](https://github.com/OpenAvikom/camunda-client/compare/0.7.0...master)
+[![GitHub commits](https://img.shields.io/github/commits-since/OpenAvikom/camunda-client/0.8.0.svg)](https://github.com/OpenAvikom/camunda-client/compare/0.8.0...master)
 [![License](https://img.shields.io/github/license/OpenAvikom/camunda-client.svg)](LICENSE)
 
 
@@ -235,6 +235,8 @@ This is just a workaround for the sake of simplicity.
 It is recommended to actually wait for worker subscriptions to return (by awaiting `worker.cancel()`) before shutting down the whole process.
 
 In `number_check` and in `echo`, we see how to retrieve variables from the `ExternalTask` object `task`.
+Note that retrieving variables with `task.context_variables["key"]` will raise a `KeyError` if `key` does not exists.
+To deal with optional variables you can use `task.context_variables.get_variable("key")` which will return `None` if `key` cannot be found.
 In `number_check`, there is also shown how a `Variables` object is created, a value is assigned and how this object is passed as a **local** variables object.
 Local variables can only be used in the scope of the service task.
 This is why we have to assign `result` to an output parameter in Camunda.
