@@ -37,12 +37,12 @@ class ExternalTaskWorker:
         _LOGGER.info("Created new External Task Worker")
 
     async def subscribe(self, topic_names, action, process_variables=None):
-        _LOGGER.info(f"Subscribing to topic {topic_names}")
+        _LOGGER.info("Subscribing to topic %s", topic_names)
         lock = asyncio.Lock()
         self.run_locks.append(lock)
         await lock.acquire()
         while not self.cancelled:
-            _LOGGER.debug(f"Locked for {topic_names}")
+            _LOGGER.debug("Locked for %s", topic_names)
             await self._fetch_and_execute_safe(topic_names, action, process_variables)
         unlock_tasks = []
         _LOGGER.info("Cancellation requested.")
@@ -135,9 +135,9 @@ class ExternalTaskWorker:
         )
         try:
             res = await action(task)
-            _LOGGER.debug(f"Task {task.task_id} is done!")
+            _LOGGER.debug("Task %s is done!", task.task_id)
         except asyncio.CancelledError:
-            _LOGGER.info(f"Task {task.task_id} has been cancelled.")
+            _LOGGER.info("Task %s has been cancelled.", task.task_id)
             if timer is not None:
                 timer.cancel()
             return

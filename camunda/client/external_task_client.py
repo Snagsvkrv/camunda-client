@@ -84,7 +84,7 @@ class ExternalTaskClient:
             "variables": global_variables.variables,
             "localVariables": local_variables.variables,
         }
-        logger.debug(f"Complete task {task_id} with {body}.")
+        logger.debug("Complete task %s with %s.", task_id, body)
         async with self.session.post(
             url, headers=self._get_headers(), json=body
         ) as response:
@@ -112,7 +112,7 @@ class ExternalTaskClient:
 
     async def extend_lock(self, task_id: str) -> None:
         url = f"{self.external_task_base_url}/{task_id}/extendLock"
-        logger.debug(f"Extending lock for {task_id} for {self.lock_duration} ms")
+        logger.debug("Extending lock for %s for %d ms", task_id, self.lock_duration)
         body = {
             "workerId": self.worker_id,
             "newDuration": self.lock_duration,
@@ -125,7 +125,7 @@ class ExternalTaskClient:
 
     async def unlock(self, task_id: str) -> None:
         url = f"{self.external_task_base_url}/{task_id}/unlock"
-        logger.debug(f"Unlock task {task_id}")
+        logger.debug("Unlock task %s", task_id)
         try:
             async with self.session.post(
                 url, headers=self._get_headers(), json={}
@@ -133,7 +133,7 @@ class ExternalTaskClient:
                 await raise_exception_if_not_ok(response)
                 return response.status == HTTPStatus.NO_CONTENT
         except Exception as err:
-            logger.warn(f"Unlocking task failed: {err}")
+            logger.warning("Unlocking task failed: %s", err)
 
     async def bpmn_error(self, task_id, error_code):
         url = f"{self.external_task_base_url}/{task_id}/bpmnError"

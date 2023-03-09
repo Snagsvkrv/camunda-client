@@ -5,8 +5,6 @@ from http import HTTPStatus
 from aiohttp import FormData, ClientSession
 
 from camunda.utils.response_utils import raise_exception_if_not_ok
-from camunda.utils.utils import join
-from camunda.variables.variables import Variables
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +73,7 @@ class EngineClient:
             data.add_field("deployment-name", no_ext)
             data.add_field("deployment-source", "external-task-client-python")
             data.add_field("deploy-changed-only", "true")
-            logger.info(f"uploading {base_name}")
+            logger.info("uploading %s", base_name)
             async with self.session.post(
                 f"{self.engine_base_url}/deployment/create", data=data
             ) as response:
@@ -86,12 +84,12 @@ class EngineClient:
                     response.raise_for_status()
 
     async def send_message(
-        self, message_name, correlation_keys={}, process_variables={}, business_key=None
+        self, message_name, correlation_keys=None, process_variables=None, business_key=None
     ):
         body = {
             "messageName": message_name,
-            "correlationKeys": correlation_keys,
-            "processVariables": process_variables,
+            "correlationKeys": correlation_keys or {},
+            "processVariables": process_variables or {},
         }
         if business_key:
             body["businessKey"] = business_key
