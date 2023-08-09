@@ -22,11 +22,11 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.7.2,<3.11"
+python = "^3.10"
 aiohttp = "^3.7.4"
 
 [tool.poetry.dev-dependencies]
-poetry = "^1.4.0"
+poetry = "^1.5.1"
 pytest = "^6.2.5"
 pytest-cov = "^3.0.0"
 pytest-asyncio = "^0.15.1"
