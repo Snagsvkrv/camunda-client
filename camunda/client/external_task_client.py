@@ -141,7 +141,7 @@ class ExternalTaskClient:
             "workerId": self.worker_id,
             "errorCode": error_code,
             "errorMessage": error_message,
-            "variables": variables,
+            "variables": variables.variables if variables is not None else None,
         }
         logger.debug(f"bpmn error payload {body}")
         async with self.session.post(
