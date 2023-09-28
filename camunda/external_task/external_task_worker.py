@@ -173,6 +173,16 @@ class ExternalTaskWorker:
                     retries=res.retries,
                     retry_timeout=res.retry_timeout,
                 )
+            elif res.is_bpmn_error():
+                _LOGGER.warning(
+                    f"{res.task.task_id} failed. Trying to report bpmn error."
+                )
+                await self.client.bpmn_error(
+                    res.task.task_id,
+                    error_code=res.bpmn_error_code,
+                    error_message=res.error_message,
+                    variables=res.task.context_variables,
+                )
         except Exception as err:
             _LOGGER.error(
                 f"[{self.worker_id}][{task.topic_name}] - {get_exception_detail(err)}"
