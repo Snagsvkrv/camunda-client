@@ -60,6 +60,7 @@ class Variables:
             data["valueInfo"] = {}
         self.variables[name] = data
 
+    @classmethod
     def format(cls, variables):
         formatted_vars = {}
         if variables:
