@@ -53,8 +53,8 @@ class ExternalTask:
             retry_timeout=retry_timeout,
         )
 
-    def bpmn_error(self, error_code: str) -> ExternalTaskResult:
-        return ExternalTaskResult(self, success=False, bpmn_error_code=error_code)
+    def bpmn_error(self, error_code: str, error_message: str) -> ExternalTaskResult:
+        return ExternalTaskResult(self, success=False, bpmn_error_code=error_code, error_message=error_message)
 
     def _calculate_retries(self, max_retries: int) -> int:
         retry_config = self._context.get("retries", "")

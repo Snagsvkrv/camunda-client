@@ -135,13 +135,16 @@ class ExternalTaskClient:
         except Exception as err:
             logger.warning("Unlocking task failed: %s", err)
 
-    async def bpmn_error(self, task_id, error_code):
+    async def bpmn_error(self, task_id, error_code, error_message, variables=None):
         url = f"{self.external_task_base_url}/{task_id}/bpmnError"
         body = {
             "workerId": self.worker_id,
             "errorCode": error_code,
+            "errorMessage": error_message,
+            "variables": variables.variables if variables is not None else None,
         }
 
+        logger.debug(f"bpmn error payload {body}")
         async with self.session.post(
             url, headers=self._get_headers(), json=body
         ) as response:
