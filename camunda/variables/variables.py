@@ -59,3 +59,13 @@ class Variables:
             data["type"] = value_type
             data["valueInfo"] = {}
         self.variables[name] = data
+
+    @classmethod
+    def format(cls, variables):
+        formatted_vars = {}
+        if variables:
+            formatted_vars = {
+                k: v if (isinstance(v, dict) and "value" in v.keys()) else {"value": v}
+                for k, v in variables.items()
+            }
+        return formatted_vars
