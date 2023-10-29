@@ -151,5 +151,20 @@ class ExternalTaskClient:
             response.raise_for_status()
             return response.status == HTTPStatus.NO_CONTENT
 
+    async def message(self, task_id, message_name):
+        url = f"{self.external_task_base_url}/message"
+        body = {
+            "messageName": message_name,
+            "processInstanceId": task_id,
+        }
+
+        logger.debug(f"Message payload {body}")
+        async with self.session.post(
+            url, headers=self._get_headers(), json=body
+        ) as response:
+            response.raise_for_status()
+            if response.status == HTTPStatus.OK:
+                return await response.json()
+
     def _get_headers(self):
         return {"Content-Type": "application/json"}

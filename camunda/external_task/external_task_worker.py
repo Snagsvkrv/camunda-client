@@ -190,6 +190,9 @@ class ExternalTaskWorker:
             logging.exception(err)
         del self.task_dict[task.task_id]
 
+    async def send_message(self, message_name, task_id):
+        await self.client.message(task_id, message_name)
+
     def _get_sleep_seconds(self):
         return self.config.get("sleepSeconds", self.DEFAULT_SLEEP_SECONDS)
 
