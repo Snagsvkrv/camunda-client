@@ -67,6 +67,7 @@ class ExternalTaskWorker:
     ):
         try:
             await self.fetch_and_execute(topic_names, action, process_variables)
+            await asyncio.sleep(self._get_sleep_seconds())
         except Exception as e:
             sleep_seconds = self._get_sleep_seconds()
             _LOGGER.warn(
